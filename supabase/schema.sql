@@ -150,6 +150,19 @@ create policy "comments insert" on public.comments for insert
     )
   );
 
+-- Enable Realtime (live messages) for the comments table — idempotent.
+do $$
+begin
+  if not exists (
+    select 1 from pg_publication_tables
+    where pubname = 'supabase_realtime'
+      and schemaname = 'public'
+      and tablename = 'comments'
+  ) then
+    execute 'alter publication supabase_realtime add table public.comments';
+  end if;
+end $$;
+
 -- A view so the portal can show comment author name + role in one query.
 create or replace view public.comments_with_author
 with (security_invoker = true) as

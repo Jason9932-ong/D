@@ -46,3 +46,20 @@ function escapeHtml(s) {
     "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;",
   }[c]));
 }
+
+/* ---- Realtime helpers (live messages) ----
+   Subscribes to INSERTs on public.comments. RLS still applies, so each user
+   only receives changes for projects they're allowed to see. */
+const _rtChannels = {};
+function rtSubscribe(name, filter, cb) {
+  rtUnsubscribe(name);
+  const opts = { event: "INSERT", schema: "public", table: "comments" };
+  if (filter) opts.filter = filter;
+  _rtChannels[name] = sb.channel("rt-" + name).on("postgres_changes", opts, cb).subscribe();
+}
+function rtUnsubscribe(name) {
+  if (_rtChannels[name]) { sb.removeChannel(_rtChannels[name]); delete _rtChannels[name]; }
+}
+function rtUnsubscribeAll() {
+  Object.keys(_rtChannels).forEach(rtUnsubscribe);
+}

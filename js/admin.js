@@ -37,6 +37,7 @@ document.getElementById("search").addEventListener("input", (e) => {
 
 function switchView(name) {
   const v = VIEWS[name]; if (!v) return;
+  rtUnsubscribeAll();
   TAB = "all";
   document.querySelectorAll(".nav-item[data-view]").forEach((b) =>
     b.classList.toggle("active", b.dataset.view === name));
@@ -169,6 +170,7 @@ function renderDashboard() {
   wireRows();
   document.getElementById("goProjects").addEventListener("click", () => switchView("projects"));
   loadDashMessages();
+  rtSubscribe("dashmsgs", null, loadDashMessages); // live "recent messages"
 }
 
 async function loadDashMessages() {
@@ -274,11 +276,13 @@ async function renderMessages() {
   applyI18n();
   view.querySelectorAll(".msg-row").forEach((r) =>
     r.addEventListener("click", () => openProject(r.dataset.pid)));
+  rtSubscribe("allmsgs", null, renderMessages); // live message feed
 }
 
 // ---------- PROJECT DETAIL ----------
 async function openProject(id) {
   currentView = () => openProject(id);
+  rtUnsubscribeAll();
   view.innerHTML = `<p class="muted" data-i18n="loading">Loading…</p>`; applyI18n();
 
   const [{ data: p }, { data: files }, { data: comments }] = await Promise.all([
@@ -323,7 +327,7 @@ async function openProject(id) {
 
       <div class="panel">
         <div class="panel-head"><h2 data-i18n="comments">Messages</h2></div>
-        <div class="clist">${commentsHtml(comments || [], ME.id)}</div>
+        <div class="clist" id="clist">${commentsHtml(comments || [], ME.id)}</div>
         <div class="composer">
           <textarea id="cbody" rows="1" data-i18n-ph="reply"></textarea>
           <button class="btn sm" id="csend" data-i18n="send">Send</button>
@@ -356,11 +360,23 @@ async function openProject(id) {
     openProject(id);
   });
   document.getElementById("csend").addEventListener("click", async () => {
-    const body = document.getElementById("cbody").value.trim(); if (!body) return;
+    const ta = document.getElementById("cbody");
+    const body = ta.value.trim(); if (!body) return;
     const { error } = await sb.from("comments").insert({ project_id: id, author_id: ME.id, body });
     if (error) { document.getElementById("cerr").textContent = error.message; return; }
-    openProject(id);
+    ta.value = "";
+    refreshThread(id);
   });
+
+  // Live updates: refresh the thread whenever a new message lands for this project.
+  rtSubscribe("thread", `project_id=eq.${id}`, () => refreshThread(id));
+}
+
+async function refreshThread(id) {
+  const { data } = await sb.from("comments_with_author")
+    .select("*").eq("project_id", id).order("created_at");
+  const host = document.getElementById("clist");
+  if (host) { host.innerHTML = commentsHtml(data || [], ME.id); applyI18n(); host.scrollTop = host.scrollHeight; }
 }
 
 // ---------- table / tabs / charts ----------

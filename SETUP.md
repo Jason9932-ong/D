@@ -63,3 +63,9 @@ image previews) and the message thread.
 - **Never** put the `service_role` key in this repo or any frontend file.
 - The 4 stages are defined in `js/config.js` (`STAGES`) if you ever want to
   rename them.
+
+## Realtime messages
+Messages are **live** — when you or a client posts, the other side sees it
+appear without refreshing. The schema already adds the `comments` table to
+Supabase Realtime, so no extra setup is needed. (If you ever reset the project,
+just re-run `supabase/schema.sql`.)

@@ -81,6 +81,7 @@ function renderLogin() {
 // ---------- PROJECT LIST ----------
 async function renderProjectList() {
   currentRender = renderProjectList;
+  rtUnsubscribeAll();
   app.innerHTML = `<p class="muted center" data-i18n="loading">Loading…</p>`;
   applyI18n();
 
@@ -119,6 +120,7 @@ async function renderProjectList() {
 // ---------- PROJECT DETAIL ----------
 async function renderProject(id) {
   currentRender = () => renderProject(id);
+  rtUnsubscribeAll();
   app.innerHTML = `<p class="muted center" data-i18n="loading">Loading…</p>`;
   applyI18n();
 
@@ -164,17 +166,30 @@ async function renderProject(id) {
   document.getElementById("backBtn").addEventListener("click", renderProjectList);
   await loadThumbs(files || []);
 
+  const myId = user.id;
   document.getElementById("csend").addEventListener("click", async () => {
-    const body = document.getElementById("cbody").value.trim();
+    const ta = document.getElementById("cbody");
+    const body = ta.value.trim();
     const cerr = document.getElementById("cerr");
     cerr.textContent = "";
     if (!body) return;
     const { error } = await sb.from("comments").insert({
-      project_id: id, author_id: user.id, body,
+      project_id: id, author_id: myId, body,
     });
     if (error) { cerr.textContent = error.message; return; }
-    renderProject(id);
+    ta.value = "";
+    refreshThread(id, myId);
   });
+
+  // Live updates: new messages from the studio appear without refreshing.
+  rtSubscribe("thread", `project_id=eq.${id}`, () => refreshThread(id, myId));
+}
+
+async function refreshThread(id, myId) {
+  const { data } = await sb.from("comments_with_author")
+    .select("*").eq("project_id", id).order("created_at");
+  const host = document.getElementById("clist");
+  if (host) { host.innerHTML = commentsHtml(data || [], myId); applyI18n(); host.scrollTop = host.scrollHeight; }
 }
 
 function stepsHtml(stage) {
