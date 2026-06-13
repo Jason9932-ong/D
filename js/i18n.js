@@ -35,6 +35,7 @@ const I18N = {
     send: "Send",
     you: "You",
     studio: "D.STUDIO",
+    client_one: "Client",
     updated: "Updated",
 
     // admin
@@ -116,6 +117,7 @@ const I18N = {
     send: "发送",
     you: "你",
     studio: "D.STUDIO",
+    client_one: "客户",
     updated: "更新于",
 
     admin_title: "项目",

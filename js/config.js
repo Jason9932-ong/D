@@ -63,3 +63,23 @@ function rtUnsubscribe(name) {
 function rtUnsubscribeAll() {
   Object.keys(_rtChannels).forEach(rtUnsubscribe);
 }
+
+/* Pass the logged-in user's token to Realtime so RLS-gated postgres_changes
+   are actually delivered (a common reason live updates "don't work"). */
+function rtAuth(token) {
+  try { if (token) sb.realtime.setAuth(token); } catch (e) { /* ignore */ }
+}
+
+/* ---- Polling fallback ----
+   Realtime may be disabled at the project level; polling guarantees the open
+   thread / message list still updates on its own. Only one poll runs at a time. */
+let _pollTimer = null;
+function startPoll(fn, ms = 4000) { stopPoll(); _pollTimer = setInterval(fn, ms); }
+function stopPoll() { if (_pollTimer) { clearInterval(_pollTimer); _pollTimer = null; } }
+
+// Cheap change-signature for a comment list, to avoid needless re-renders.
+function commentsSig(rows) {
+  if (!rows || !rows.length) return "0";
+  const last = rows[rows.length - 1];
+  return rows.length + ":" + (last.id || last.created_at || "");
+}

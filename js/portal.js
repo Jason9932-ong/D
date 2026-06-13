@@ -16,6 +16,7 @@ logoutBtn.addEventListener("click", async () => {
 (async function boot() {
   const { data: { session } } = await sb.auth.getSession();
   if (!session) return renderLogin();
+  rtAuth(session.access_token);
   showLoggedIn(true);
   renderProjectList();
 })();
@@ -27,6 +28,7 @@ function showLoggedIn(on) {
 // ---------- LOGIN ----------
 function renderLogin() {
   showLoggedIn(false);
+  rtUnsubscribeAll(); stopPoll();
   currentRender = renderLogin;
   app.innerHTML = `
     <div class="login-box card">
@@ -81,7 +83,7 @@ function renderLogin() {
 // ---------- PROJECT LIST ----------
 async function renderProjectList() {
   currentRender = renderProjectList;
-  rtUnsubscribeAll();
+  rtUnsubscribeAll(); stopPoll();
   app.innerHTML = `<p class="muted center" data-i18n="loading">Loading…</p>`;
   applyI18n();
 
@@ -154,6 +156,7 @@ async function renderProject(id) {
 
     <div class="card">
       <div class="section-h" style="margin-top:0"><h3 data-i18n="comments">Messages</h3></div>
+      <div class="clegend"><span><i class="i-studio"></i> D.STUDIO</span><span><i class="i-client"></i> <span data-i18n="client_one">Client</span></span></div>
       <div class="clist" id="clist">${commentsHtml(comments || [], user.id)}</div>
       <div class="composer">
         <textarea id="cbody" rows="1" data-i18n-ph="write_message"></textarea>
@@ -162,6 +165,7 @@ async function renderProject(id) {
       <div class="err" id="cerr"></div>
     </div>`;
   applyI18n();
+  document.getElementById("clist").dataset.sig = commentsSig(comments || []);
 
   document.getElementById("backBtn").addEventListener("click", renderProjectList);
   await loadThumbs(files || []);
@@ -181,15 +185,17 @@ async function renderProject(id) {
     refreshThread(id, myId);
   });
 
-  // Live updates: new messages from the studio appear without refreshing.
+  // Live updates: realtime push + polling fallback.
   rtSubscribe("thread", `project_id=eq.${id}`, () => refreshThread(id, myId));
+  startPoll(() => refreshThread(id, myId), 4000);
 }
 
 async function refreshThread(id, myId) {
+  const host = document.getElementById("clist"); if (!host) return;
   const { data } = await sb.from("comments_with_author")
     .select("*").eq("project_id", id).order("created_at");
-  const host = document.getElementById("clist");
-  if (host) { host.innerHTML = commentsHtml(data || [], myId); applyI18n(); host.scrollTop = host.scrollHeight; }
+  const sig = commentsSig(data); if (host.dataset.sig === sig) return; host.dataset.sig = sig;
+  host.innerHTML = commentsHtml(data || [], myId); applyI18n(); host.scrollTop = host.scrollHeight;
 }
 
 function stepsHtml(stage) {
@@ -219,8 +225,9 @@ function commentsHtml(comments, myId) {
   if (!comments.length) return `<p class="empty" data-i18n="no_comments"></p>`;
   return comments.map((c) => {
     const mine = c.author_id === myId;
-    const who = c.author_role === "admin" ? t("studio") : (mine ? t("you") : escapeHtml(c.author_name || ""));
-    return `<div class="cmsg ${mine ? "me" : "them"}">
+    const isStudio = c.author_role === "admin";
+    const who = isStudio ? t("studio") : (escapeHtml(c.author_name || "") || t("client_one"));
+    return `<div class="cmsg ${mine ? "right" : "left"} ${isStudio ? "studio" : "client"}">
       <div class="who">${who}</div>
       <div>${escapeHtml(c.body)}</div>
       <div class="time">${fmtDate(c.created_at)}</div>

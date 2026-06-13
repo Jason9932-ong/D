@@ -37,7 +37,7 @@ document.getElementById("search").addEventListener("input", (e) => {
 
 function switchView(name) {
   const v = VIEWS[name]; if (!v) return;
-  rtUnsubscribeAll();
+  rtUnsubscribeAll(); stopPoll();
   TAB = "all";
   document.querySelectorAll(".nav-item[data-view]").forEach((b) =>
     b.classList.toggle("active", b.dataset.view === name));
@@ -62,6 +62,7 @@ function switchView(name) {
     return;
   }
   ME = { ...session.user, ...prof };
+  rtAuth(session.access_token);
   loginScreen.style.display = "none"; shell.style.display = "flex";
   setUserChrome();
   await loadData();
@@ -171,12 +172,15 @@ function renderDashboard() {
   document.getElementById("goProjects").addEventListener("click", () => switchView("projects"));
   loadDashMessages();
   rtSubscribe("dashmsgs", null, loadDashMessages); // live "recent messages"
+  startPoll(loadDashMessages, 6000);               // fallback if realtime is off
 }
 
+let _dashSig = "";
 async function loadDashMessages() {
   const host = document.getElementById("dashMsgs"); if (!host) return;
   const { data } = await sb.from("comments_with_author")
     .select("*").order("created_at", { ascending: false }).limit(5);
+  const sig = commentsSig(data); if (sig === _dashSig) return; _dashSig = sig;
   if (!data || !data.length) { host.innerHTML = `<p class="empty" data-i18n="no_messages"></p>`; applyI18n(); return; }
   const titleOf = (pid) => { const p = PROJECTS.find((x) => x.id === pid); return p ? p.title : "—"; };
   host.innerHTML = data.map((c) => {
@@ -255,28 +259,37 @@ function renderClients() {
 }
 
 // ---------- MESSAGES ----------
+let _msgSig = "";
 async function renderMessages() {
   view.innerHTML = `<div class="page-head"><h1 data-i18n="nav_messages">Messages</h1></div>
-    <div class="panel"><p class="muted" data-i18n="loading">Loading…</p></div>`;
+    <div class="panel"><div id="msgHost"><p class="muted" data-i18n="loading">Loading…</p></div></div>`;
   applyI18n();
+  _msgSig = "";
+  await refreshMessages();
+  rtSubscribe("allmsgs", null, refreshMessages); // live message feed
+  startPoll(refreshMessages, 6000);              // fallback if realtime is off
+}
+
+async function refreshMessages() {
+  const host = document.getElementById("msgHost"); if (!host) return;
   const { data } = await sb.from("comments_with_author")
     .select("*").order("created_at", { ascending: false }).limit(60);
+  const sig = commentsSig(data); if (sig === _msgSig) return; _msgSig = sig;
   const titleOf = (pid) => { const p = PROJECTS.find((x) => x.id === pid); return p ? p.title : "—"; };
-  const body = (!data || !data.length)
+  host.innerHTML = (!data || !data.length)
     ? `<p class="empty" data-i18n="no_messages"></p>`
     : data.map((c) => {
-        const who = c.author_role === "admin" ? t("studio") : (c.author_name || "");
+        const isStudio = c.author_role === "admin";
+        const who = isStudio ? t("studio") : (c.author_name || t("client_one"));
+        const dot = isStudio ? "var(--lav)" : "#FFB48F";
         return `<div class="msg-row" data-pid="${c.project_id}" style="padding:13px 0;border-bottom:1px solid var(--line2);cursor:pointer">
-          <div style="font-size:13.5px"><b>${escapeHtml(who)}</b>
+          <div style="font-size:13.5px"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${dot};margin-right:7px"></span><b>${escapeHtml(who)}</b>
             <span class="muted">· ${escapeHtml(titleOf(c.project_id))} · ${fmtDate(c.created_at)}</span></div>
-          <div class="muted" style="font-size:14px">${escapeHtml(c.body)}</div></div>`;
+          <div class="muted" style="font-size:14px;margin-left:15px">${escapeHtml(c.body)}</div></div>`;
       }).join("");
-  view.innerHTML = `<div class="page-head"><h1 data-i18n="nav_messages">Messages</h1></div>
-    <div class="panel">${body}</div>`;
   applyI18n();
-  view.querySelectorAll(".msg-row").forEach((r) =>
+  host.querySelectorAll(".msg-row").forEach((r) =>
     r.addEventListener("click", () => openProject(r.dataset.pid)));
-  rtSubscribe("allmsgs", null, renderMessages); // live message feed
 }
 
 // ---------- PROJECT DETAIL ----------
@@ -327,6 +340,7 @@ async function openProject(id) {
 
       <div class="panel">
         <div class="panel-head"><h2 data-i18n="comments">Messages</h2></div>
+        <div class="clegend"><span><i class="i-studio"></i> D.STUDIO</span><span><i class="i-client"></i> <span data-i18n="client_one">Client</span></span></div>
         <div class="clist" id="clist">${commentsHtml(comments || [], ME.id)}</div>
         <div class="composer">
           <textarea id="cbody" rows="1" data-i18n-ph="reply"></textarea>
@@ -336,6 +350,7 @@ async function openProject(id) {
       </div>
     </div>`;
   applyI18n();
+  document.getElementById("clist").dataset.sig = commentsSig(comments || []);
   await loadThumbs(files || [], id);
 
   document.getElementById("backBtn").addEventListener("click", () => switchView("projects"));
@@ -368,15 +383,17 @@ async function openProject(id) {
     refreshThread(id);
   });
 
-  // Live updates: refresh the thread whenever a new message lands for this project.
+  // Live updates: realtime push + polling fallback.
   rtSubscribe("thread", `project_id=eq.${id}`, () => refreshThread(id));
+  startPoll(() => refreshThread(id), 4000);
 }
 
 async function refreshThread(id) {
+  const host = document.getElementById("clist"); if (!host) return;
   const { data } = await sb.from("comments_with_author")
     .select("*").eq("project_id", id).order("created_at");
-  const host = document.getElementById("clist");
-  if (host) { host.innerHTML = commentsHtml(data || [], ME.id); applyI18n(); host.scrollTop = host.scrollHeight; }
+  const sig = commentsSig(data); if (host.dataset.sig === sig) return; host.dataset.sig = sig;
+  host.innerHTML = commentsHtml(data || [], ME.id); applyI18n(); host.scrollTop = host.scrollHeight;
 }
 
 // ---------- table / tabs / charts ----------
@@ -478,9 +495,11 @@ function commentsHtml(comments, myId) {
   if (!comments.length) return `<p class="empty" data-i18n="no_comments"></p>`;
   return comments.map((c) => {
     const mine = c.author_id === myId;
-    const who = c.author_role === "admin" ? t("studio") : escapeHtml(c.author_name || "");
-    return `<div class="cmsg ${mine ? "me" : "them"}"><div class="who">${who}</div>
-      <div>${escapeHtml(c.body)}</div><div class="time">${fmtDate(c.created_at)}</div></div>`;
+    const isStudio = c.author_role === "admin";
+    const who = isStudio ? t("studio") : (escapeHtml(c.author_name || "") || t("client_one"));
+    return `<div class="cmsg ${mine ? "right" : "left"} ${isStudio ? "studio" : "client"}">
+      <div class="who">${who}</div><div>${escapeHtml(c.body)}</div>
+      <div class="time">${fmtDate(c.created_at)}</div></div>`;
   }).join("");
 }
 async function loadThumbs(files, projectId) {

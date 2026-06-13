@@ -108,11 +108,23 @@ input,textarea,select{font-family:inherit;font-size:15px}
 /* ---- comments ---- */
 .clist{display:flex;flex-direction:column;gap:12px;margin-bottom:16px}
 .cmsg{max-width:80%;padding:11px 15px;border-radius:16px;font-size:14.5px}
-.cmsg .who{font-size:11.5px;font-weight:700;margin-bottom:3px;opacity:.8}
+.cmsg .who{display:flex;align-items:center;gap:6px;font-size:11.5px;font-weight:700;margin-bottom:3px}
+.cmsg .who::before{content:"";width:8px;height:8px;border-radius:50%;background:currentColor;opacity:.7}
 .cmsg .time{font-size:11px;opacity:.6;margin-top:4px}
-.cmsg.them{align-self:flex-start;background:#F1EEFF;border-bottom-left-radius:5px}
-.cmsg.me{align-self:flex-end;background:var(--lav);color:#fff;border-bottom-right-radius:5px}
-.cmsg.me .who{color:#EDE9FF}
+/* alignment: my own messages on the right */
+.cmsg.left{align-self:flex-start;border-bottom-left-radius:5px}
+.cmsg.right{align-self:flex-end;border-bottom-right-radius:5px}
+/* colour by ROLE, so you can always tell studio from client */
+.cmsg.studio{background:linear-gradient(135deg,var(--lav),var(--lav-d));color:#fff}
+.cmsg.studio .who{color:#EDE9FF}
+.cmsg.client{background:#FFF0E6;color:var(--ink);border:1px solid #FFDFC9}
+.cmsg.client .who{color:#C8702F}
+/* legend above the thread */
+.clegend{display:flex;gap:16px;margin-bottom:12px;font-size:12px;font-weight:600;color:var(--soft)}
+.clegend span{display:inline-flex;align-items:center;gap:6px}
+.clegend i{width:10px;height:10px;border-radius:50%;display:inline-block}
+.clegend .i-studio{background:var(--lav)}
+.clegend .i-client{background:#FFB48F}
 .composer{display:flex;gap:10px;align-items:flex-end}
 .composer textarea{flex:1;resize:vertical;min-height:46px;max-height:160px;padding:11px 14px;border:1px solid var(--line);border-radius:14px}
 
