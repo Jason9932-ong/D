@@ -65,7 +65,9 @@ function switchView(name) {
   rtAuth(session.access_token);
   loginScreen.style.display = "none"; shell.style.display = "flex";
   setUserChrome();
+  document.getElementById("bellBtn").addEventListener("click", () => { switchView("messages"); });
   await loadData();
+  startBell();
   switchView("dashboard");
 })();
 
@@ -243,19 +245,85 @@ async function createProject() {
 function renderClients() {
   view.innerHTML = `
     <div class="page-head"><h1 data-i18n="nav_clients">Clients</h1></div>
+
     <div class="panel">
-      ${CLIENTS.length ? `<div class="cards-grid">` + CLIENTS.map((c) => {
-        const n = c.full_name || c.email || "—";
-        const count = PROJECTS.filter((p) => p.client_id === c.id).length;
-        return `<div class="client-card">
-          <span class="av">${initials(n)}</span>
-          <div><div class="cname">${escapeHtml(n)}</div>
-          <div class="cmail">${escapeHtml(c.email || "")}</div>
-          <div class="cmail">${count} ${t("nav_projects").toLowerCase()}</div></div>
-        </div>`;
-      }).join("") + `</div>` : `<p class="empty" data-i18n="no_clients"></p>`}
+      <div class="panel-head"><h2 data-i18n="add_client">Add new client</h2></div>
+      <div class="row">
+        <label class="field"><span data-i18n="full_name">Full name</span><input id="acName" type="text"></label>
+        <label class="field"><span data-i18n="email">Email</span><input id="acEmail" type="email" autocomplete="off"></label>
+      </div>
+      <label class="field"><span data-i18n="password">Password</span>
+        <div style="display:flex;gap:8px">
+          <input id="acPass" type="text" autocomplete="off" style="flex:1">
+          <button class="btn soft sm" id="acGen" type="button" data-i18n="gen_password">Generate</button>
+        </div>
+      </label>
+      <p class="muted" style="font-size:12.5px;margin-bottom:12px" data-i18n="confirm_note"></p>
+      <div class="err" id="acErr"></div>
+      <div id="acResult"></div>
+      <button class="btn" id="acCreate" data-i18n="create_account">Create account</button>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head"><h2 data-i18n="nav_clients">Clients</h2></div>
+      <div id="clientCards"></div>
     </div>`;
   applyI18n();
+  renderClientCards();
+  document.getElementById("acGen").addEventListener("click", () => {
+    document.getElementById("acPass").value = genPassword();
+  });
+  document.getElementById("acCreate").addEventListener("click", createClientSubmit);
+}
+
+function renderClientCards() {
+  const host = document.getElementById("clientCards"); if (!host) return;
+  if (!CLIENTS.length) { host.innerHTML = `<p class="empty" data-i18n="no_clients"></p>`; applyI18n(); return; }
+  host.innerHTML = `<div class="cards-grid">` + CLIENTS.map((c) => {
+    const n = c.full_name || c.email || "—";
+    const count = PROJECTS.filter((p) => p.client_id === c.id).length;
+    return `<div class="client-card">
+      <span class="av">${initials(n)}</span>
+      <div><div class="cname">${escapeHtml(n)}</div>
+      <div class="cmail">${escapeHtml(c.email || "")}</div>
+      <div class="cmail">${count} ${t("nav_projects").toLowerCase()}</div></div>
+    </div>`;
+  }).join("") + `</div>`;
+}
+
+async function createClientSubmit() {
+  const err = document.getElementById("acErr");
+  const btn = document.getElementById("acCreate");
+  err.textContent = "";
+  const full_name = document.getElementById("acName").value.trim();
+  const email = document.getElementById("acEmail").value.trim();
+  const password = document.getElementById("acPass").value;
+  if (!email || password.length < 6) { err.textContent = "!"; return; }
+  btn.disabled = true; const old = btn.textContent; btn.textContent = t("creating");
+  const { error } = await createClientAccount(email, password, full_name);
+  btn.disabled = false; btn.textContent = old;
+  if (error) { err.textContent = error.message; return; }
+  // show the credentials to copy + reset the form
+  document.getElementById("acName").value = "";
+  document.getElementById("acEmail").value = "";
+  document.getElementById("acPass").value = "";
+  const creds = `${email} · ${password}`;
+  document.getElementById("acResult").innerHTML = `
+    <div class="card" style="background:#E2F7EE;border-color:#BFE9D6;margin-bottom:14px">
+      <div class="ok" data-i18n="client_created" style="margin:0 0 8px"></div>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+        <code style="background:#fff;padding:8px 12px;border-radius:10px;font-size:14px">${escapeHtml(creds)}</code>
+        <button class="btn soft sm" id="acCopy" type="button" data-i18n="copy">Copy</button>
+      </div>
+      <div class="muted" style="font-size:12.5px;margin-top:8px">${escapeHtml(t("home"))} : <a href="../portal/" target="_blank">/portal/</a></div>
+    </div>`;
+  applyI18n();
+  document.getElementById("acCopy").addEventListener("click", (e) => {
+    navigator.clipboard?.writeText(creds);
+    e.target.textContent = t("copied");
+  });
+  // refresh the client list (profile is created by the signup trigger)
+  setTimeout(async () => { await loadData(); renderClientCards(); }, 900);
 }
 
 // ---------- MESSAGES ----------
@@ -264,6 +332,7 @@ async function renderMessages() {
   view.innerHTML = `<div class="page-head"><h1 data-i18n="nav_messages">Messages</h1></div>
     <div class="panel"><div id="msgHost"><p class="muted" data-i18n="loading">Loading…</p></div></div>`;
   applyI18n();
+  markBellSeen();
   _msgSig = "";
   await refreshMessages();
   rtSubscribe("allmsgs", null, refreshMessages); // live message feed
@@ -522,6 +591,58 @@ async function loadThumbs(files, projectId) {
       openProject(projectId);
     });
   }
+}
+
+// ---------- bell (new client messages) ----------
+let BELL_SEEN = localStorage.getItem("dstudio_bell_seen") || new Date().toISOString();
+if (!localStorage.getItem("dstudio_bell_seen")) localStorage.setItem("dstudio_bell_seen", BELL_SEEN);
+let _bellTimer = null;
+
+function startBell() {
+  updateBell();
+  rtSubscribeBell();
+  if (_bellTimer) clearInterval(_bellTimer);
+  _bellTimer = setInterval(updateBell, 8000); // independent of view-level polling
+}
+async function updateBell() {
+  const { count } = await sb.from("comments_with_author")
+    .select("id", { count: "exact", head: true })
+    .eq("author_role", "client").gt("created_at", BELL_SEEN);
+  setBellBadge(count || 0);
+}
+function setBellBadge(n) {
+  const dot = document.getElementById("bellDot");
+  const btn = document.getElementById("bellBtn");
+  if (!dot) return;
+  if (n > 0) { dot.style.display = "flex"; dot.textContent = n > 9 ? "9+" : String(n); btn.classList.add("bell-anim"); }
+  else { dot.style.display = "none"; btn.classList.remove("bell-anim"); }
+}
+function markBellSeen() {
+  BELL_SEEN = new Date().toISOString();
+  localStorage.setItem("dstudio_bell_seen", BELL_SEEN);
+  setBellBadge(0);
+}
+// A dedicated realtime channel that survives view changes (not cleared by rtUnsubscribeAll).
+let _bellChannel = null;
+function rtSubscribeBell() {
+  if (_bellChannel) return;
+  _bellChannel = sb.channel("rt-bell")
+    .on("postgres_changes", { event: "INSERT", schema: "public", table: "comments" }, updateBell)
+    .subscribe();
+}
+
+// ---------- create client (email + password) ----------
+function genPassword() {
+  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789";
+  let s = ""; for (let i = 0; i < 10; i++) s += chars[Math.floor(Math.random() * chars.length)];
+  return s;
+}
+// Uses a throwaway client so signUp does NOT replace the admin's session.
+function createClientAccount(email, password, full_name) {
+  const tmp = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+    auth: { persistSession: false, autoRefreshToken: false, storageKey: "dstudio_signup_tmp" },
+  });
+  return tmp.auth.signUp({ email, password, options: { data: { full_name } } });
 }
 
 // ---------- utils ----------

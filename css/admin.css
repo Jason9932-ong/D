@@ -51,6 +51,10 @@ body{background:var(--graybg)}
 .search2 input{border:none;outline:none;background:none;width:100%;font-size:14px;color:var(--ink)}
 .icon-btn{width:36px;height:36px;border-radius:10px;border:1px solid var(--line2);background:#fff;font-size:15px;color:#5B5874}
 .icon-btn:hover{background:#F6F4FF}
+.bell-dot{position:absolute;top:-5px;right:-5px;min-width:17px;height:17px;padding:0 4px;border-radius:99px;
+  background:#E14B6A;color:#fff;font-size:10.5px;font-weight:700;display:flex;align-items:center;justify-content:center;border:2px solid #fff}
+.bell-anim{animation:bellpulse 1.6s ease-in-out infinite}
+@keyframes bellpulse{0%,100%{transform:rotate(0)}10%,30%{transform:rotate(-12deg)}20%,40%{transform:rotate(12deg)}}
 .av-top{width:36px;height:36px;border-radius:50%;background:linear-gradient(140deg,var(--blue),var(--lav));color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700}
 
 /* ===== promo banner ===== */

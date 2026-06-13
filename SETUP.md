@@ -41,11 +41,22 @@ https://jason9932-ong.github.io/D/admin/
 ## Day-to-day use
 
 ### Adding a client
-1. **Authentication → Users → Add user** → client's email + a password
-   (Auto Confirm on). A profile row is created automatically.
-2. Send the client their email + password and the link
-   **https://jason9932-ong.github.io/D/portal/**
-   (They can also use “Email me a login link” instead of the password.)
+Two ways:
+
+**A) From the admin panel (easiest)** — open **Clients → Add new client**, enter
+their name + email, click **Generate** for a password, then **Create account**.
+You'll get a copyable `email · password` to send them, along with the portal link.
+
+> For the password to work immediately, turn **off** email confirmation:
+> **Authentication → Providers → Email → uncheck "Confirm email"**. Otherwise the
+> client must click a confirmation link before the password works.
+
+**B) From Supabase** — **Authentication → Users → Add user** (Auto Confirm on).
+A profile row is created automatically.
+
+Then send the client their email + password and the portal link
+**https://jason9932-ong.github.io/D/portal/** (they can also use “Email me a
+login link”).
 
 ### Managing a project (admin)
 Go to **https://jason9932-ong.github.io/D/admin/**, log in, then:
