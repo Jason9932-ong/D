@@ -9,22 +9,54 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@500;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="../css/app.css">
+<link rel="stylesheet" href="../css/admin.css">
 </head>
 <body>
 
-<div class="topbar">
-  <div class="topbar-in">
-    <a class="logo" href="../index.html">D.STUDIO<i></i></a>
-    <span class="chip" data-i18n="brand_admin">D.STUDIO · Admin</span>
-    <span class="spacer"></span>
-    <button id="langToggle" class="lang-btn" type="button">中文</button>
-    <button id="logoutBtn" class="link-btn" type="button" data-i18n="logout" style="display:none">Log out</button>
+<!-- login screen (shown when logged out) -->
+<div id="loginScreen" class="login-wrap" style="display:none"></div>
+
+<!-- dashboard shell (shown when logged in as admin) -->
+<div id="shell" class="admin-layout" style="display:none">
+  <aside class="sidebar">
+    <div class="side-logo"><span class="mark">◆</span> D.STUDIO</div>
+
+    <nav class="side-section" style="margin-top:14px">
+      <div class="side-label" data-i18n="nav_general">General</div>
+      <button class="nav-item" data-view="dashboard"><span class="ic">🏠</span><span data-i18n="nav_dashboard">Dashboard</span></button>
+      <button class="nav-item" data-view="projects"><span class="ic">🗂️</span><span data-i18n="nav_projects">Projects</span><span class="spacer"></span><span class="nav-count" id="cntProjects">0</span></button>
+      <button class="nav-item" data-view="clients"><span class="ic">👥</span><span data-i18n="nav_clients">Clients</span><span class="spacer"></span><span class="nav-count" id="cntClients">0</span></button>
+      <button class="nav-item" data-view="messages"><span class="ic">💬</span><span data-i18n="nav_messages">Messages</span></button>
+    </nav>
+
+    <div class="side-foot">
+      <button class="nav-item" id="langToggleNav"><span class="ic">🌐</span><span id="langToggle">中文</span></button>
+      <button class="nav-item" id="logoutBtn"><span class="ic">↩︎</span><span data-i18n="logout">Log out</span></button>
+      <div class="side-user">
+        <span class="av" id="userAv">D</span>
+        <div><div class="uname" id="userName">—</div><div class="umail" id="userMail">—</div></div>
+      </div>
+    </div>
+  </aside>
+
+  <div class="main-area">
+    <header class="topbar2">
+      <div class="crumb-nav">
+        <button class="crumb-btn" type="button" disabled>‹</button>
+        <button class="crumb-btn" type="button" disabled>›</button>
+      </div>
+      <div class="crumb">Pages / <b id="crumb" data-i18n="nav_dashboard">Dashboard</b></div>
+      <span class="spacer"></span>
+      <div class="search2"><span>🔍</span><input id="search" type="text" data-i18n-ph="search_ph" placeholder="Search…"></div>
+      <button class="icon-btn" type="button">🔔</button>
+      <span class="av-top" id="avTop">D</span>
+    </header>
+
+    <div id="view" class="content2">
+      <p class="muted" data-i18n="loading">Loading…</p>
+    </div>
   </div>
 </div>
-
-<main id="app" class="wrap">
-  <p class="muted center" data-i18n="loading">Loading…</p>
-</main>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="../js/i18n.js"></script>
