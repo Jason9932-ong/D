@@ -7,11 +7,14 @@
   --card:#FFFFFF; --line:#ECE9F8; --r:20px;
 }
 *{margin:0;padding:0;box-sizing:border-box}
+html,body{max-width:100%;overflow-x:hidden}
 body{
   font-family:'Plus Jakarta Sans',system-ui,sans-serif;
   background:var(--bg);color:var(--ink);line-height:1.6;
   -webkit-font-smoothing:antialiased;
 }
+img{max-width:100%}
+input,textarea,select{max-width:100%}
 h1,h2,h3{font-family:'Bricolage Grotesque','Plus Jakarta Sans',sans-serif;letter-spacing:-0.02em;line-height:1.15}
 a{color:var(--lav-d);text-decoration:none}
 a:hover{text-decoration:underline}
@@ -62,6 +65,10 @@ input,textarea,select{font-family:inherit;font-size:15px}
 .field input:focus,.field textarea:focus,.field select:focus{outline:2px solid var(--lav);border-color:transparent}
 .row{display:flex;gap:12px;flex-wrap:wrap}
 .row > *{flex:1;min-width:140px}
+@media(max-width:560px){
+  .row{flex-direction:column;gap:0}
+  .row > *{min-width:0;width:100%;max-width:100%!important}
+}
 .err{color:#D6336C;font-size:13.5px;font-weight:600;margin-top:6px;min-height:1em}
 .ok{color:#1B9C73;font-size:13.5px;font-weight:600;margin-top:6px}
 
