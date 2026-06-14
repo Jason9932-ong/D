@@ -12,9 +12,17 @@ logoutBtn.addEventListener("click", async () => {
   location.reload();
 });
 
+// When the user clicks a password-reset email link, Supabase signs them in with
+// a recovery session and fires this event — show the "set new password" form.
+let recovering = false;
+sb.auth.onAuthStateChange((event) => {
+  if (event === "PASSWORD_RECOVERY") { recovering = true; renderResetPassword(); }
+});
+
 // ---- boot ----
 (async function boot() {
   const { data: { session } } = await sb.auth.getSession();
+  if (recovering) return;            // recovery flow has taken over
   if (!session) return renderLogin();
   rtAuth(session.access_token);
   showLoggedIn(true);
@@ -49,11 +57,24 @@ function renderLogin() {
       <p class="center" style="margin-top:14px">
         <button class="link-btn" id="magicBtn" type="button" data-i18n="magic_link">Email me a login link instead</button>
       </p>
+      <p class="center" style="margin-top:8px">
+        <button class="link-btn" id="forgotBtn" type="button" data-i18n="forgot_password">Forgot password?</button>
+      </p>
       <p class="center" style="margin-top:18px">
         <a href="../index.html" data-i18n="home">← Back to site</a>
       </p>
     </div>`;
   applyI18n();
+
+  document.getElementById("forgotBtn").addEventListener("click", async () => {
+    const errEl = document.getElementById("loginErr");
+    errEl.style.color = ""; errEl.textContent = "";
+    const email = document.getElementById("email").value.trim();
+    if (!email) { errEl.textContent = t("enter_email_first"); return; }
+    const { error } = await sb.auth.resetPasswordForEmail(email, { redirectTo: location.href.split("#")[0] });
+    if (error) { errEl.textContent = error.message; return; }
+    errEl.style.color = "#1B9C73"; errEl.textContent = t("reset_sent");
+  });
 
   const err = document.getElementById("loginErr");
   document.getElementById("loginForm").addEventListener("submit", async (e) => {
@@ -77,6 +98,39 @@ function renderLogin() {
     if (error) { err.textContent = error.message; return; }
     err.style.color = "#1B9C73";
     err.textContent = t("magic_sent");
+  });
+}
+
+// ---------- RESET PASSWORD (after clicking the email link) ----------
+function renderResetPassword() {
+  showLoggedIn(false);
+  rtUnsubscribeAll(); stopPoll();
+  currentRender = renderResetPassword;
+  app.innerHTML = `
+    <div class="login-box card">
+      <h1 data-i18n="set_new_password">Set a new password</h1>
+      <form id="resetForm" style="margin-top:18px">
+        <label class="field">
+          <span data-i18n="new_password">New password</span>
+          <input id="newPass" type="password" autocomplete="new-password" required>
+        </label>
+        <div class="err" id="resetErr"></div>
+        <button class="btn full" type="submit" data-i18n="save_password">Save password</button>
+      </form>
+    </div>`;
+  applyI18n();
+  const err = document.getElementById("resetErr");
+  document.getElementById("resetForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    err.style.color = ""; err.textContent = "";
+    const password = document.getElementById("newPass").value;
+    if (password.length < 6) { err.textContent = t("pass_short"); return; }
+    const { error } = await sb.auth.updateUser({ password });
+    if (error) { err.textContent = error.message; return; }
+    recovering = false;
+    err.style.color = "#1B9C73"; err.textContent = t("password_updated");
+    showLoggedIn(true);
+    setTimeout(renderProjectList, 900);
   });
 }
 

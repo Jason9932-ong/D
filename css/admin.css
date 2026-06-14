@@ -72,9 +72,23 @@ body{background:var(--graybg)}
 .bp-item .bp-time{font-size:11px;color:var(--soft);margin-top:2px}
 .bp-empty{padding:22px 16px;text-align:center;color:var(--soft);font-size:13.5px}
 
-/* horizontal scroll for wide tables (mobile) */
+/* horizontal scroll for wide tables (tablet) */
 .table-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
 .table-scroll .dtable{min-width:560px}
+
+/* on phones, turn each row into a stacked card (no horizontal scroll) */
+@media(max-width:600px){
+  .table-scroll{overflow:visible}
+  .table-scroll .dtable{min-width:0}
+  .dtable thead{display:none}
+  .dtable,.dtable tbody,.dtable tr,.dtable td{display:block;width:100%}
+  .dtable tr{border:1px solid var(--line2);border-radius:14px;background:#fff;padding:6px 14px;margin-bottom:12px}
+  .dtable td{border:none;padding:8px 0;display:flex;justify-content:space-between;align-items:center;gap:12px;text-align:right}
+  .dtable td:not(:last-child){border-bottom:1px solid #F3F2FA}
+  .dtable td::before{content:attr(data-label);color:var(--soft);font-size:12.5px;font-weight:600;text-align:left}
+  .dtable td.truncate{max-width:none;white-space:normal}
+  .dtable .who{justify-content:flex-end}
+}
 
 /* mobile slide-in sidebar */
 .side-backdrop{display:none;position:fixed;inset:0;background:rgba(31,33,56,.4);z-index:35}

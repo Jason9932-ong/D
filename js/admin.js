@@ -295,8 +295,10 @@ function renderClientCards() {
     if (EDIT_CLIENT === c.id) {
       return `<div class="client-card editing">
         <div style="flex:1;min-width:0">
-          <input class="cedit-input" id="cedit-${c.id}" value="${escapeHtml(c.full_name || "")}" data-i18n-ph="full_name">
-          <div class="cmail" style="margin-top:6px">${escapeHtml(c.email || "")}</div>
+          <input class="cedit-input" id="cedit-name-${c.id}" value="${escapeHtml(c.full_name || "")}" data-i18n-ph="full_name">
+          <input class="cedit-input" id="cedit-email-${c.id}" type="email" value="${escapeHtml(c.email || "")}" data-i18n-ph="email" style="margin-top:8px">
+          <input class="cedit-input" id="cedit-pass-${c.id}" type="text" autocomplete="off" data-i18n-ph="pass_keep" style="margin-top:8px">
+          <div class="err" id="cedit-err-${c.id}" style="margin-top:6px"></div>
           <div style="display:flex;gap:8px;margin-top:10px">
             <button class="btn sm" data-save="${c.id}" data-i18n="save">Save</button>
             <button class="btn soft sm" data-cancel="1" data-i18n="cancel">Cancel</button>
@@ -320,9 +322,27 @@ function renderClientCards() {
   host.querySelectorAll("[data-del]").forEach((b) => b.addEventListener("click", () => deleteClient(b.dataset.del)));
 }
 async function saveClient(id) {
-  const val = document.getElementById("cedit-" + id).value.trim();
-  const { error } = await sb.from("profiles").update({ full_name: val }).eq("id", id);
-  if (error) { alert(error.message); return; }
+  const c = CLIENTS.find((x) => x.id === id) || {};
+  const name = document.getElementById("cedit-name-" + id).value.trim();
+  const email = document.getElementById("cedit-email-" + id).value.trim();
+  const password = document.getElementById("cedit-pass-" + id).value;
+  const errEl = document.getElementById("cedit-err-" + id);
+  errEl.textContent = "";
+  const emailChanged = email && email !== (c.email || "");
+
+  if (emailChanged || password) {
+    // Email/password changes need the service role → admin-update-client function.
+    const { data, error } = await sb.functions.invoke("admin-update-client", {
+      body: { userId: id, full_name: name, email: emailChanged ? email : undefined, password: password || undefined },
+    });
+    if (error || (data && data.error)) {
+      errEl.textContent = (data && data.error) ? data.error : t("fn_hint");
+      return;
+    }
+  } else {
+    const { error } = await sb.from("profiles").update({ full_name: name }).eq("id", id);
+    if (error) { errEl.textContent = error.message; return; }
+  }
   EDIT_CLIENT = null; await loadData(); renderClientCards();
 }
 async function deleteClient(id) {
@@ -549,11 +569,11 @@ function projectsTableHtml(list) {
     const c = CLIENTS.find((x) => x.id === p.client_id);
     const cn = c ? (c.full_name || c.email) : "—";
     return `<tr data-id="${p.id}">
-      <td><div class="who"><span class="av">${initials(cn)}</span>${escapeHtml(cn)}</div></td>
-      <td class="muted-cell">${fmtDate(p.created_at)}</td>
-      <td>${emoji[p.service_type] || "📦"} ${serviceLabel(p.service_type)}</td>
-      <td class="truncate">${escapeHtml(p.title)}</td>
-      <td>${stageBadge(p.stage)}</td>
+      <td data-label="${escapeHtml(t("col_client"))}"><div class="who"><span class="av">${initials(cn)}</span>${escapeHtml(cn)}</div></td>
+      <td data-label="${escapeHtml(t("col_date"))}" class="muted-cell">${fmtDate(p.created_at)}</td>
+      <td data-label="${escapeHtml(t("col_service"))}">${emoji[p.service_type] || "📦"} ${serviceLabel(p.service_type)}</td>
+      <td data-label="${escapeHtml(t("col_project"))}" class="truncate">${escapeHtml(p.title)}</td>
+      <td data-label="${escapeHtml(t("col_stage"))}">${stageBadge(p.stage)}</td>
     </tr>`;
   }).join("");
   return `<div class="table-scroll"><table class="dtable"><thead><tr>
