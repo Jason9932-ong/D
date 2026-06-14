@@ -55,8 +55,10 @@ const I18N = {
     kind_preview: "Preview",
     kind_final: "Final",
     reply: "Reply…",
+    edit: "Edit",
     delete: "Delete",
     confirm_delete: "Delete this?",
+    confirm_delete_client: "Delete this client and all their projects? This can't be undone.",
     no_clients: "No clients yet. Add one in Supabase → Authentication → Users.",
     refresh: "Refresh",
 
@@ -145,8 +147,10 @@ const I18N = {
     kind_preview: "预览图",
     kind_final: "成品",
     reply: "回复…",
+    edit: "编辑",
     delete: "删除",
     confirm_delete: "确定删除？",
+    confirm_delete_client: "删除该客户及其所有项目？此操作无法撤销。",
     no_clients: "还没有客户。请在 Supabase → Authentication → Users 添加。",
     refresh: "刷新",
 

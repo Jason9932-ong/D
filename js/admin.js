@@ -5,7 +5,6 @@
 const shell = document.getElementById("shell");
 const loginScreen = document.getElementById("loginScreen");
 const view = document.getElementById("view");
-const crumbEl = document.getElementById("crumb");
 
 let CLIENTS = [];
 let PROJECTS = [];
@@ -28,8 +27,16 @@ document.getElementById("logoutBtn").addEventListener("click", async () => {
   await sb.auth.signOut(); location.reload();
 });
 document.querySelectorAll(".nav-item[data-view]").forEach((btn) => {
-  btn.addEventListener("click", () => switchView(btn.dataset.view));
+  btn.addEventListener("click", () => { switchView(btn.dataset.view); closeSidebar(); });
 });
+
+// Mobile slide-in sidebar
+const sidebarEl = document.getElementById("sidebar");
+const backdropEl = document.getElementById("sideBackdrop");
+function openSidebar() { sidebarEl.classList.add("open"); backdropEl.classList.add("show"); }
+function closeSidebar() { sidebarEl.classList.remove("open"); backdropEl.classList.remove("show"); }
+document.getElementById("menuBtn").addEventListener("click", openSidebar);
+backdropEl.addEventListener("click", closeSidebar);
 document.getElementById("search").addEventListener("input", (e) => {
   SEARCH = e.target.value.trim().toLowerCase();
   if (currentView === renderProjects || currentView === renderDashboard) currentView();
@@ -41,8 +48,6 @@ function switchView(name) {
   TAB = "all";
   document.querySelectorAll(".nav-item[data-view]").forEach((b) =>
     b.classList.toggle("active", b.dataset.view === name));
-  crumbEl.setAttribute("data-i18n", v.i18n);
-  crumbEl.textContent = t(v.i18n);
   currentView = v.fn;
   v.fn();
 }
@@ -65,7 +70,11 @@ function switchView(name) {
   rtAuth(session.access_token);
   loginScreen.style.display = "none"; shell.style.display = "flex";
   setUserChrome();
-  document.getElementById("bellBtn").addEventListener("click", () => { switchView("messages"); });
+  document.getElementById("bellBtn").addEventListener("click", (e) => { e.stopPropagation(); toggleBellPanel(); });
+  document.addEventListener("click", (e) => {
+    const wrap = document.querySelector(".bell-wrap");
+    if (wrap && !wrap.contains(e.target)) hideBellPanel();
+  });
   await loadData();
   startBell();
   switchView("dashboard");
@@ -276,19 +285,51 @@ function renderClients() {
   document.getElementById("acCreate").addEventListener("click", createClientSubmit);
 }
 
+let EDIT_CLIENT = null;
 function renderClientCards() {
   const host = document.getElementById("clientCards"); if (!host) return;
   if (!CLIENTS.length) { host.innerHTML = `<p class="empty" data-i18n="no_clients"></p>`; applyI18n(); return; }
   host.innerHTML = `<div class="cards-grid">` + CLIENTS.map((c) => {
     const n = c.full_name || c.email || "—";
     const count = PROJECTS.filter((p) => p.client_id === c.id).length;
+    if (EDIT_CLIENT === c.id) {
+      return `<div class="client-card editing">
+        <div style="flex:1;min-width:0">
+          <input class="cedit-input" id="cedit-${c.id}" value="${escapeHtml(c.full_name || "")}" data-i18n-ph="full_name">
+          <div class="cmail" style="margin-top:6px">${escapeHtml(c.email || "")}</div>
+          <div style="display:flex;gap:8px;margin-top:10px">
+            <button class="btn sm" data-save="${c.id}" data-i18n="save">Save</button>
+            <button class="btn soft sm" data-cancel="1" data-i18n="cancel">Cancel</button>
+          </div>
+        </div></div>`;
+    }
     return `<div class="client-card">
       <span class="av">${initials(n)}</span>
-      <div><div class="cname">${escapeHtml(n)}</div>
-      <div class="cmail">${escapeHtml(c.email || "")}</div>
-      <div class="cmail">${count} ${t("nav_projects").toLowerCase()}</div></div>
-    </div>`;
+      <div style="flex:1;min-width:0"><div class="cname">${escapeHtml(n)}</div>
+        <div class="cmail">${escapeHtml(c.email || "")}</div>
+        <div class="cmail">${count} ${t("nav_projects").toLowerCase()}</div></div>
+      <div class="card-actions">
+        <button class="iconbtn-sm" data-edit="${c.id}" title="${escapeHtml(t("edit"))}">✏️</button>
+        <button class="iconbtn-sm" data-del="${c.id}" title="${escapeHtml(t("delete"))}">🗑️</button>
+      </div></div>`;
   }).join("") + `</div>`;
+  applyI18n();
+  host.querySelectorAll("[data-edit]").forEach((b) => b.addEventListener("click", () => { EDIT_CLIENT = b.dataset.edit; renderClientCards(); }));
+  host.querySelectorAll("[data-cancel]").forEach((b) => b.addEventListener("click", () => { EDIT_CLIENT = null; renderClientCards(); }));
+  host.querySelectorAll("[data-save]").forEach((b) => b.addEventListener("click", () => saveClient(b.dataset.save)));
+  host.querySelectorAll("[data-del]").forEach((b) => b.addEventListener("click", () => deleteClient(b.dataset.del)));
+}
+async function saveClient(id) {
+  const val = document.getElementById("cedit-" + id).value.trim();
+  const { error } = await sb.from("profiles").update({ full_name: val }).eq("id", id);
+  if (error) { alert(error.message); return; }
+  EDIT_CLIENT = null; await loadData(); renderClientCards();
+}
+async function deleteClient(id) {
+  if (!confirm(t("confirm_delete_client"))) return;
+  const { error } = await sb.from("profiles").delete().eq("id", id);
+  if (error) { alert(error.message); return; }
+  await loadData(); renderClientCards();
 }
 
 async function createClientSubmit() {
@@ -515,10 +556,10 @@ function projectsTableHtml(list) {
       <td>${stageBadge(p.stage)}</td>
     </tr>`;
   }).join("");
-  return `<table class="dtable"><thead><tr>
+  return `<div class="table-scroll"><table class="dtable"><thead><tr>
     <th data-i18n="col_client">Client</th><th data-i18n="col_date">Date</th>
     <th data-i18n="col_service">Service</th><th data-i18n="col_project">Project</th>
-    <th data-i18n="col_stage">Stage</th></tr></thead><tbody>${rows}</tbody></table>`;
+    <th data-i18n="col_stage">Stage</th></tr></thead><tbody>${rows}</tbody></table></div>`;
 }
 
 function wireRows() {
@@ -621,6 +662,42 @@ function markBellSeen() {
   BELL_SEEN = new Date().toISOString();
   localStorage.setItem("dstudio_bell_seen", BELL_SEEN);
   setBellBadge(0);
+}
+function hideBellPanel() {
+  const p = document.getElementById("bellPanel"); if (p) p.style.display = "none";
+}
+async function toggleBellPanel() {
+  const panel = document.getElementById("bellPanel");
+  if (panel.style.display === "block") { panel.style.display = "none"; return; }
+  panel.innerHTML = `<div class="bp-head"><span data-i18n="recent_messages">Recent messages</span>
+    <span class="spacer"></span><a href="#" id="bpAll" data-i18n="open">Open</a></div>
+    <div class="bp-list"><p class="bp-empty" data-i18n="loading">Loading…</p></div>`;
+  panel.style.display = "block";
+  applyI18n();
+  document.getElementById("bpAll").addEventListener("click", (e) => { e.preventDefault(); hideBellPanel(); switchView("messages"); });
+
+  const { data } = await sb.from("comments_with_author")
+    .select("*").order("created_at", { ascending: false }).limit(10);
+  const listEl = panel.querySelector(".bp-list");
+  const titleOf = (pid) => { const p = PROJECTS.find((x) => x.id === pid); return p ? p.title : "—"; };
+  if (!data || !data.length) { listEl.innerHTML = `<p class="bp-empty" data-i18n="no_messages"></p>`; applyI18n(); }
+  else {
+    listEl.innerHTML = data.map((c) => {
+      const isStudio = c.author_role === "admin";
+      const who = isStudio ? t("studio") : (c.author_name || t("client_one"));
+      const bg = isStudio ? "var(--lav)" : "#FFB48F";
+      return `<div class="bp-item" data-pid="${c.project_id}">
+        <span class="bp-av" style="background:${bg}">${escapeHtml(initials(who))}</span>
+        <div style="min-width:0">
+          <div class="bp-name">${escapeHtml(who)} <span class="muted" style="font-weight:500">· ${escapeHtml(titleOf(c.project_id))}</span></div>
+          <div class="bp-sub">${escapeHtml(c.body)}</div>
+          <div class="bp-time">${fmtDate(c.created_at)}</div>
+        </div></div>`;
+    }).join("");
+    listEl.querySelectorAll(".bp-item").forEach((it) =>
+      it.addEventListener("click", () => { hideBellPanel(); openProject(it.dataset.pid); }));
+  }
+  markBellSeen(); // opening the panel counts as read
 }
 // A dedicated realtime channel that survives view changes (not cleared by rtUnsubscribeAll).
 let _bellChannel = null;

@@ -42,6 +42,10 @@ drop policy if exists "profiles insert" on public.profiles;
 create policy "profiles insert" on public.profiles for insert
   with check (id = auth.uid() or public.is_admin());
 
+drop policy if exists "profiles delete" on public.profiles;
+create policy "profiles delete" on public.profiles for delete
+  using (public.is_admin());
+
 -- Auto-create a profile whenever a new auth user is added.
 create or replace function public.handle_new_user()
 returns trigger
