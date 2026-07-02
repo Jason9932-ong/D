@@ -45,6 +45,37 @@
     })();
   }
 
+  /* ---------- portfolio (data lives in portfolio.js) ---------- */
+  const pfGrid = document.getElementById("pfGrid");
+  if (pfGrid) {
+    const items = Array.isArray(window.PORTFOLIO) ? window.PORTFOLIO : [];
+    const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({
+      "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;",
+    }[c]));
+    if (!items.length) {
+      const empty = document.getElementById("pfEmpty");
+      if (empty) empty.style.display = "";
+    } else {
+      pfGrid.innerHTML = items.map((it, i) => {
+        const tagCls = /reel|video|tiktok/i.test(it.tag || "") ? "t-reel"
+          : /landing|page|web/i.test(it.tag || "") ? "t-page" : "t-gfx";
+        const media = it.img
+          ? `<img src="${esc(it.img)}" alt="${esc(it.title)}" loading="lazy">`
+          : `<span class="pf-ph" data-hue="${i % 3}">${esc(it.emoji || "🏎️")}</span>`;
+        const inner = `
+          <div class="pf-media">${media}</div>
+          <div class="pf-body">
+            <span class="pf-tag ${tagCls}">${esc(it.tag || "Work")}</span>
+            <h3>${esc(it.title)}</h3>
+            ${it.desc ? `<p>${esc(it.desc)}</p>` : ""}
+          </div>`;
+        return it.link
+          ? `<a class="pf-card fx fx-flip" data-tilt href="${esc(it.link)}" target="_blank" rel="noopener"><div class="tc-glow"></div>${inner}</a>`
+          : `<div class="pf-card fx fx-flip" data-tilt><div class="tc-glow"></div>${inner}</div>`;
+      }).join("");
+    }
+  }
+
   /* ---------- scrub engine ---------- */
   // Collect .fx elements; children of [data-stagger] get an incremental
   // progress offset so items in the same row arrive one after another.

@@ -13,6 +13,8 @@
 }
 *{margin:0;padding:0;box-sizing:border-box}
 html{scroll-behavior:smooth}
+html,body{max-width:100%;overflow-x:hidden;overflow-x:clip}
+section{overflow:clip}
 @media (prefers-reduced-motion: reduce){
   html{scroll-behavior:auto}
   *,*::before,*::after{animation:none!important;transition:none!important}
@@ -150,6 +152,29 @@ nav{position:sticky;top:0;z-index:30;background:rgba(251,250,255,0.85);backdrop-
 .hook h2 em{font-style:normal;color:var(--lav)}
 .hook p{color:var(--soft);font-weight:500;max-width:480px;margin:0 auto 26px}
 .hook .mini{display:flex;gap:24px;justify-content:center;flex-wrap:wrap;margin-top:24px;font-size:13px;font-weight:700;color:var(--lav-d)}
+
+/* ---------- auto showcase band ---------- */
+.auto-band{
+  display:flex;align-items:center;gap:20px;padding:26px 32px;border-radius:26px;
+  background:linear-gradient(120deg,#14142B 0%,#1D1A3F 55%,#2A1E52 100%);
+  color:#EDEBFF;position:relative;overflow:hidden;
+  box-shadow:0 24px 50px -22px rgba(31,26,63,0.65);
+  transition:transform .2s ease, box-shadow .2s ease;
+}
+.auto-band::after{content:"";position:absolute;inset:0;pointer-events:none;
+  background:radial-gradient(420px 140px at 85% 20%,rgba(139,124,246,0.35),transparent 70%)}
+.auto-band:hover{transform:translateY(-4px);box-shadow:0 30px 60px -22px rgba(31,26,63,0.8)}
+.ab-icon{font-size:38px;flex:none;filter:drop-shadow(0 0 14px rgba(139,124,246,0.8))}
+.ab-copy{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.ab-copy b{font-family:'Bricolage Grotesque';font-size:19px;letter-spacing:.01em}
+.ab-copy b em{font-style:normal;color:#8B7CF6;letter-spacing:.14em}
+.ab-copy > span{color:#A8A4D4;font-size:13.5px;font-weight:500}
+.ab-go{flex:none;font-weight:700;font-size:14px;color:#fff;background:rgba(139,124,246,0.25);
+  border:1px solid rgba(139,124,246,0.5);border-radius:99px;padding:10px 20px;white-space:nowrap}
+.auto-band:hover .ab-go{background:#8B7CF6}
+@media(max-width:640px){
+  .auto-band{flex-direction:column;text-align:center;gap:12px;padding:24px 20px}
+}
 
 /* ---------- contact ---------- */
 .contact{text-align:center}
