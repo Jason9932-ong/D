@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>D.STUDIO — AUTO · Automotive Design & Marketing</title>
+<meta name="description" content="D.STUDIO Auto — listing graphics, showroom reels and dealer landing pages for the automotive industry.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Orbitron:wght@600;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="lab.css">
+</head>
+<body>
+
+<!-- scroll progress -->
+<div class="progress" id="progress"></div>
+
+<!-- scroll rail -->
+<div class="rail" aria-hidden="true"><span class="rail-orb" id="railOrb"></span></div>
+
+<!-- starfield canvas -->
+<canvas id="stars" aria-hidden="true"></canvas>
+
+<!-- ================= NAV ================= -->
+<nav class="lnav">
+  <div class="lnav-in">
+    <a class="llogo" href="../index.html"><span class="cube-mini" aria-hidden="true"></span>D.STUDIO<span class="lab-tag">AUTO</span></a>
+    <div class="lnav-links">
+      <a href="#work">Services</a>
+      <a href="#stack">Process</a>
+      <a href="#portfolio">Portfolio</a>
+    </div>
+    <a class="lbtn sm" href="../index.html#contact">Start a project</a>
+  </div>
+</nav>
+
+<!-- ================= HERO ================= -->
+<header class="hero3d" id="top">
+  <div class="grid-floor" aria-hidden="true"></div>
+  <div class="hero-inner" id="heroInner">
+    <p class="kicker glitch" data-text="AUTOMOTIVE × DESIGN">AUTOMOTIVE × DESIGN</p>
+    <h1>Shift your brand<br>into <span class="grad">another gear</span></h1>
+    <p class="lead">Listing graphics, showroom reels and dealer landing pages —
+      built to turn scrollers into test-drives.</p>
+    <div class="hero-cta">
+      <a class="lbtn" href="#work">Explore services</a>
+      <a class="lbtn ghost" href="#portfolio">See the work</a>
+    </div>
+  </div>
+
+  <!-- floating 3D cube -->
+  <div class="scene" aria-hidden="true">
+    <div class="cube" id="cube">
+      <div class="face f-front">🏎️</div>
+      <div class="face f-back">🎬</div>
+      <div class="face f-right">🔧</div>
+      <div class="face f-left">🏁</div>
+      <div class="face f-top">⚡</div>
+      <div class="face f-bottom">D</div>
+    </div>
+  </div>
+
+  <div class="scroll-hint" aria-hidden="true"><span></span></div>
+</header>
+
+<!-- ================= MARQUEE ================= -->
+<div class="marquee" aria-hidden="true">
+  <div class="marquee-track">
+    <span>CAR LISTINGS ✦ SHOWROOM PROMOS ✦ DETAILING REELS ✦ DELIVERY-DAY VIDEOS ✦ DEALER PAGES ✦ LIVERY &amp; DECALS ✦&nbsp;</span>
+    <span>CAR LISTINGS ✦ SHOWROOM PROMOS ✦ DETAILING REELS ✦ DELIVERY-DAY VIDEOS ✦ DEALER PAGES ✦ LIVERY &amp; DECALS ✦&nbsp;</span>
+  </div>
+</div>
+
+<!-- ================= SERVICES (3D tilt cards) ================= -->
+<section id="work" class="lsection">
+  <div class="lwrap">
+    <h2 class="fx fx-clip"><span class="idx">01</span> Built for the motor trade</h2>
+    <div class="tilt-grid" data-stagger="0.22">
+      <article class="tilt-card fx fx-flip" data-tilt>
+        <div class="tc-glow"></div>
+        <div class="tc-body">
+          <div class="tc-icon">🚗</div>
+          <h3>Listing &amp; Promo Graphics</h3>
+          <p>Car sales posts, price cards, promo banners and showroom event visuals that pop off the feed.</p>
+          <div class="tc-price">from S$35</div>
+        </div>
+      </article>
+      <article class="tilt-card fx fx-flip" data-tilt>
+        <div class="tc-glow"></div>
+        <div class="tc-body">
+          <div class="tc-icon">🎬</div>
+          <h3>Reels &amp; TikTok</h3>
+          <p>Delivery-day edits, detailing transformations and walkaround reels — hook in 3 seconds.</p>
+          <div class="tc-price">from S$80</div>
+        </div>
+      </article>
+      <article class="tilt-card fx fx-flip" data-tilt>
+        <div class="tc-glow"></div>
+        <div class="tc-body">
+          <div class="tc-icon">🏁</div>
+          <h3>Dealer Landing Pages</h3>
+          <p>Test-drive bookings, WhatsApp enquiries and stock showcases — mobile-first and tracked.</p>
+          <div class="tc-price">from S$280</div>
+        </div>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- ================= PROCESS ================= -->
+<section id="stack" class="lsection">
+  <div class="lwrap">
+    <h2 class="fx fx-clip"><span class="idx">02</span> From brief to full throttle</h2>
+    <div class="steps3d">
+      <div class="step3d fx fx-left">
+        <div class="s-num">1</div>
+        <div><h3>Brief</h3><p>Tell us the car, the offer and the deadline. Fixed quote, zero surprises.</p></div>
+      </div>
+      <div class="step3d fx fx-right">
+        <div class="s-num">2</div>
+        <div><h3>Free draft</h3><p>A watermarked first draft lands in ~48 hours. Pay only if you like it.</p></div>
+      </div>
+      <div class="step3d fx fx-left">
+        <div class="s-num">3</div>
+        <div><h3>Track live</h3><p>Watch progress, files and messages in your client portal — realtime.</p></div>
+      </div>
+      <div class="step3d fx fx-right">
+        <div class="s-num">4</div>
+        <div><h3>Launch</h3><p>Final files delivered, sized for every platform. We stay for tweaks.</p></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= STATS ================= -->
+<section id="stats" class="lsection">
+  <div class="lwrap">
+    <h2 class="fx fx-clip"><span class="idx">03</span> Performance figures</h2>
+    <div class="stat3d-grid" data-stagger="0.15">
+      <div class="stat3d fx fx-zoom"><div class="n" data-count="48">0</div><div class="l">hour first draft</div></div>
+      <div class="stat3d fx fx-zoom"><div class="n" data-count="3">0</div><div class="l">second hooks</div></div>
+      <div class="stat3d fx fx-zoom"><div class="n" data-count="100" data-suffix="%">0</div><div class="l">fixed quotes</div></div>
+      <div class="stat3d fx fx-zoom"><div class="n" data-count="20" data-suffix="%" data-prefix="−">0</div><div class="l">first 10 clients, for life</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= PORTFOLIO ================= -->
+<section id="portfolio" class="lsection">
+  <div class="lwrap">
+    <h2 class="fx fx-clip"><span class="idx">04</span> Portfolio</h2>
+    <div class="pf-grid" id="pfGrid" data-stagger="0.14"><!-- rendered from portfolio.js --></div>
+    <p class="pf-empty" id="pfEmpty" style="display:none">More work rolling in soon 🏁</p>
+  </div>
+</section>
+
+<!-- ================= CTA ================= -->
+<section class="lsection cta3d">
+  <div class="lwrap">
+    <div class="cta-panel fx fx-zoom" data-tilt>
+      <div class="tc-glow"></div>
+      <h2>Ready to hit the gas?</h2>
+      <p>Free watermarked first draft. Pay only if you love it.</p>
+      <a class="lbtn" href="../index.html#contact">Start my free draft</a>
+    </div>
+  </div>
+</section>
+
+<footer class="lfooter">
+  <div class="lwrap">
+    <span>© 2026 <b>D.STUDIO</b> · AUTO</span>
+    <a href="../index.html">Main site</a>
+    <a href="../portal/">Client portal</a>
+  </div>
+</footer>
+
+<script src="portfolio.js"></script>
+<script src="lab.js"></script>
+</body>
+</html>
