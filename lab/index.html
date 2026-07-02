@@ -15,6 +15,9 @@
 <!-- scroll progress -->
 <div class="progress" id="progress"></div>
 
+<!-- scroll rail -->
+<div class="rail" aria-hidden="true"><span class="rail-orb" id="railOrb"></span></div>
+
 <!-- starfield canvas -->
 <canvas id="stars" aria-hidden="true"></canvas>
 
@@ -34,7 +37,7 @@
 <!-- ================= HERO ================= -->
 <header class="hero3d" id="top">
   <div class="grid-floor" aria-hidden="true"></div>
-  <div class="hero-inner reveal">
+  <div class="hero-inner" id="heroInner">
     <p class="kicker glitch" data-text="DESIGN × TECHNOLOGY">DESIGN × TECHNOLOGY</p>
     <h1>We build brands<br>in <span class="grad">another dimension</span></h1>
     <p class="lead">Motion-first graphics, kinetic video and immersive pages —
@@ -71,9 +74,9 @@
 <!-- ================= WORK (3D tilt cards) ================= -->
 <section id="work" class="lsection">
   <div class="lwrap">
-    <h2 class="reveal"><span class="idx">01</span> What we make</h2>
-    <div class="tilt-grid">
-      <article class="tilt-card reveal" data-tilt>
+    <h2 class="fx fx-clip"><span class="idx">01</span> What we make</h2>
+    <div class="tilt-grid" data-stagger="0.22">
+      <article class="tilt-card fx fx-flip" data-tilt>
         <div class="tc-glow"></div>
         <div class="tc-body">
           <div class="tc-icon">🎨</div>
@@ -82,7 +85,7 @@
           <div class="tc-price">from S$35</div>
         </div>
       </article>
-      <article class="tilt-card reveal" data-tilt style="--d:.12s">
+      <article class="tilt-card fx fx-flip" data-tilt>
         <div class="tc-glow"></div>
         <div class="tc-body">
           <div class="tc-icon">🎬</div>
@@ -91,7 +94,7 @@
           <div class="tc-price">from S$80</div>
         </div>
       </article>
-      <article class="tilt-card reveal" data-tilt style="--d:.24s">
+      <article class="tilt-card fx fx-flip" data-tilt>
         <div class="tc-glow"></div>
         <div class="tc-body">
           <div class="tc-icon">🖥️</div>
@@ -107,21 +110,21 @@
 <!-- ================= PROCESS (parallax layers) ================= -->
 <section id="stack" class="lsection">
   <div class="lwrap">
-    <h2 class="reveal"><span class="idx">02</span> How it works</h2>
+    <h2 class="fx fx-clip"><span class="idx">02</span> How it works</h2>
     <div class="steps3d">
-      <div class="step3d reveal">
+      <div class="step3d fx fx-left">
         <div class="s-num">1</div>
         <div><h3>Brief</h3><p>Tell us the goal and deadline. Fixed quote, zero surprises.</p></div>
       </div>
-      <div class="step3d reveal" style="--d:.1s">
+      <div class="step3d fx fx-right">
         <div class="s-num">2</div>
         <div><h3>Free draft</h3><p>A watermarked first draft lands in ~48 hours. Pay only if you like it.</p></div>
       </div>
-      <div class="step3d reveal" style="--d:.2s">
+      <div class="step3d fx fx-left">
         <div class="s-num">3</div>
         <div><h3>Track live</h3><p>Watch progress, files and messages in your client portal — realtime.</p></div>
       </div>
-      <div class="step3d reveal" style="--d:.3s">
+      <div class="step3d fx fx-right">
         <div class="s-num">4</div>
         <div><h3>Launch</h3><p>Final files delivered. We stay for tweaks with a gentle care plan.</p></div>
       </div>
@@ -132,20 +135,20 @@
 <!-- ================= STATS (counters) ================= -->
 <section id="stats" class="lsection">
   <div class="lwrap">
-    <h2 class="reveal"><span class="idx">03</span> Signals</h2>
-    <div class="stat3d-grid">
-      <div class="stat3d reveal"><div class="n" data-count="48">0</div><div class="l">hour first draft</div></div>
-      <div class="stat3d reveal" style="--d:.1s"><div class="n" data-count="3">0</div><div class="l">second hooks</div></div>
-      <div class="stat3d reveal" style="--d:.2s"><div class="n" data-count="100" data-suffix="%">0</div><div class="l">fixed quotes</div></div>
-      <div class="stat3d reveal" style="--d:.3s"><div class="n" data-count="20" data-suffix="%" data-prefix="−">0</div><div class="l">first 10 clients, for life</div></div>
+    <h2 class="fx fx-clip"><span class="idx">03</span> Signals</h2>
+    <div class="stat3d-grid" data-stagger="0.15">
+      <div class="stat3d fx fx-zoom"><div class="n" data-count="48">0</div><div class="l">hour first draft</div></div>
+      <div class="stat3d fx fx-zoom"><div class="n" data-count="3">0</div><div class="l">second hooks</div></div>
+      <div class="stat3d fx fx-zoom"><div class="n" data-count="100" data-suffix="%">0</div><div class="l">fixed quotes</div></div>
+      <div class="stat3d fx fx-zoom"><div class="n" data-count="20" data-suffix="%" data-prefix="−">0</div><div class="l">first 10 clients, for life</div></div>
     </div>
   </div>
 </section>
 
 <!-- ================= CTA ================= -->
 <section class="lsection cta3d">
-  <div class="lwrap reveal">
-    <div class="cta-panel" data-tilt>
+  <div class="lwrap">
+    <div class="cta-panel fx fx-zoom" data-tilt>
       <div class="tc-glow"></div>
       <h2>Ready to leave flatland?</h2>
       <p>Free watermarked first draft. Pay only if you love it.</p>

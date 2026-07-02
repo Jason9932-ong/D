@@ -1,16 +1,12 @@
-/* D.STUDIO LAB — starfield, scroll reveal, 3D tilt, counters, progress. */
+/* D.STUDIO LAB — scroll-scrubbed animation engine.
+   Every effect is tied to scroll position (plays forward on scroll down,
+   backward on scroll up), smoothed with a small lerp. */
 (function () {
   const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 
   /* ---------- scroll progress bar ---------- */
   const bar = document.getElementById("progress");
-  function onScrollBar() {
-    const h = document.documentElement;
-    const max = h.scrollHeight - h.clientHeight;
-    bar.style.width = (max > 0 ? (h.scrollTop / max) * 100 : 0) + "%";
-  }
-  addEventListener("scroll", onScrollBar, { passive: true });
-  onScrollBar();
 
   /* ---------- starfield with scroll parallax ---------- */
   const canvas = document.getElementById("stars");
@@ -25,10 +21,8 @@
       canvas.style.height = innerHeight + "px";
       const n = Math.min(160, Math.floor(innerWidth / 8));
       stars = Array.from({ length: n }, () => ({
-        x: Math.random() * W,
-        y: Math.random() * H,
-        z: Math.random() * 0.9 + 0.1,           // depth → size, speed, parallax
-        tw: Math.random() * Math.PI * 2,
+        x: Math.random() * W, y: Math.random() * H,
+        z: Math.random() * 0.9 + 0.1, tw: Math.random() * Math.PI * 2,
       }));
     }
     resize();
@@ -51,11 +45,71 @@
     })();
   }
 
-  /* ---------- scroll reveal ---------- */
-  const io = new IntersectionObserver((entries) => {
-    entries.forEach((e) => { if (e.isIntersecting) { e.target.classList.add("in"); io.unobserve(e.target); } });
-  }, { threshold: 0.15 });
-  document.querySelectorAll(".reveal").forEach((el) => io.observe(el));
+  /* ---------- scrub engine ---------- */
+  // Collect .fx elements; children of [data-stagger] get an incremental
+  // progress offset so items in the same row arrive one after another.
+  const fxEls = [];
+  document.querySelectorAll("[data-stagger]").forEach((c) => {
+    const step = parseFloat(c.dataset.stagger) || 0;
+    [...c.children].forEach((ch, i) => { if (ch.classList.contains("fx")) ch._shift = i * step; });
+  });
+  document.querySelectorAll(".fx").forEach((el) => fxEls.push({ el, shift: el._shift || 0, cur: -1 }));
+  const sections = [...document.querySelectorAll(".lsection")].map((el) => ({ el, cur: -1 }));
+
+  const heroInner = document.getElementById("heroInner");
+  const gridFloor = document.querySelector(".grid-floor");
+  const cube = document.getElementById("cube");
+  const railOrb = document.getElementById("railOrb");
+  const marqueeTrack = document.querySelector(".marquee-track");
+
+  const ease = (p) => 1 - Math.pow(1 - p, 2.2);      // ease-out on the scrub
+  let ticking = false;
+
+  function frame() {
+    ticking = false;
+    const vh = innerHeight;
+    const h = document.documentElement;
+    const maxScroll = h.scrollHeight - h.clientHeight;
+    const total = maxScroll > 0 ? h.scrollTop / maxScroll : 0;
+
+    // progress bar + rail orb follow overall scroll
+    if (bar) bar.style.width = total * 100 + "%";
+    if (railOrb) railOrb.style.top = total * (vh - 14) + 2 + "px";
+
+    // per-element scrub: 0 when entering at the bottom → 1 around mid-viewport
+    for (const f of fxEls) {
+      const r = f.el.getBoundingClientRect();
+      let p = (vh * 0.94 - r.top) / (vh * 0.5);
+      p = clamp(p - f.shift, 0, 1);
+      p = ease(p);
+      if (Math.abs(p - f.cur) > 0.001) { f.cur = p; f.el.style.setProperty("--p", p.toFixed(3)); }
+    }
+    // per-section glow drift
+    for (const s of sections) {
+      const r = s.el.getBoundingClientRect();
+      const p = ease(clamp((vh * 0.9 - r.top) / (vh * 0.8), 0, 1));
+      if (Math.abs(p - s.cur) > 0.001) { s.cur = p; s.el.style.setProperty("--p", p.toFixed(3)); }
+    }
+
+    if (!reduced) {
+      // hero exit transition: shrink, lift and fade as you scroll away
+      const hp = clamp(scrollY / (vh * 0.85), 0, 1);
+      if (heroInner) {
+        heroInner.style.transform = `translateY(${hp * -80}px) scale(${1 - hp * 0.14})`;
+        heroInner.style.opacity = String(1 - hp * 1.15);
+      }
+      if (gridFloor) gridFloor.style.transform =
+        `perspective(600px) rotateX(62deg) translateY(${hp * 120}px)`;
+      if (cube) cube.style.opacity = String(1 - hp * 0.9);
+
+      // marquee drifts with the scrollbar on top of its own animation
+      if (marqueeTrack) marqueeTrack.style.marginLeft = -(scrollY * 0.18 % 300) + "px";
+    }
+  }
+  function onScroll() { if (!ticking) { ticking = true; requestAnimationFrame(frame); } }
+  addEventListener("scroll", onScroll, { passive: true });
+  addEventListener("resize", onScroll, { passive: true });
+  frame();
 
   /* ---------- 3D tilt (mouse; skipped on touch) ---------- */
   const fine = window.matchMedia("(pointer: fine)").matches;
@@ -66,7 +120,7 @@
         const r = card.getBoundingClientRect();
         const px = (e.clientX - r.left) / r.width - 0.5;
         const py = (e.clientY - r.top) / r.height - 0.5;
-        card.style.transform = `rotateY(${px * 14}deg) rotateX(${py * -14}deg) translateZ(6px)`;
+        card.style.transform = `perspective(900px) rotateY(${px * 14}deg) rotateX(${py * -14}deg) translateZ(6px)`;
         if (glow) { glow.style.left = (px + 0.5) * 100 + "%"; glow.style.top = (py + 0.5) * 100 + "%"; }
       });
       card.addEventListener("mouseleave", () => { card.style.transform = ""; });
@@ -93,13 +147,4 @@
     });
   }, { threshold: 0.6 });
   document.querySelectorAll(".n[data-count]").forEach((el) => cio.observe(el));
-
-  /* ---------- hero cube: slow down spin while scrolling past hero ---------- */
-  const cube = document.getElementById("cube");
-  if (cube && !reduced) {
-    addEventListener("scroll", () => {
-      const y = Math.min(1, scrollY / innerHeight);
-      cube.style.opacity = String(1 - y * 0.9);
-    }, { passive: true });
-  }
 })();
