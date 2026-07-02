@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>D.STUDIO — LAB · Design × Technology</title>
+<meta name="description" content="D.STUDIO Lab — motion, 3D and tech-driven design for brands that want to stand out.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Orbitron:wght@600;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="lab.css">
+</head>
+<body>
+
+<!-- scroll progress -->
+<div class="progress" id="progress"></div>
+
+<!-- starfield canvas -->
+<canvas id="stars" aria-hidden="true"></canvas>
+
+<!-- ================= NAV ================= -->
+<nav class="lnav">
+  <div class="lnav-in">
+    <a class="llogo" href="../index.html"><span class="cube-mini" aria-hidden="true"></span>D.STUDIO<span class="lab-tag">LAB</span></a>
+    <div class="lnav-links">
+      <a href="#work">Work</a>
+      <a href="#stack">Stack</a>
+      <a href="#stats">Stats</a>
+    </div>
+    <a class="lbtn sm" href="../index.html#contact">Start a project</a>
+  </div>
+</nav>
+
+<!-- ================= HERO ================= -->
+<header class="hero3d" id="top">
+  <div class="grid-floor" aria-hidden="true"></div>
+  <div class="hero-inner reveal">
+    <p class="kicker glitch" data-text="DESIGN × TECHNOLOGY">DESIGN × TECHNOLOGY</p>
+    <h1>We build brands<br>in <span class="grad">another dimension</span></h1>
+    <p class="lead">Motion-first graphics, kinetic video and immersive pages —
+      engineered to stop thumbs and start conversations.</p>
+    <div class="hero-cta">
+      <a class="lbtn" href="#work">Explore the lab</a>
+      <a class="lbtn ghost" href="../index.html">← Classic site</a>
+    </div>
+  </div>
+
+  <!-- floating 3D cube -->
+  <div class="scene" aria-hidden="true">
+    <div class="cube" id="cube">
+      <div class="face f-front">🎨</div>
+      <div class="face f-back">🎬</div>
+      <div class="face f-right">🖥️</div>
+      <div class="face f-left">✦</div>
+      <div class="face f-top">◆</div>
+      <div class="face f-bottom">D</div>
+    </div>
+  </div>
+
+  <div class="scroll-hint" aria-hidden="true"><span></span></div>
+</header>
+
+<!-- ================= MARQUEE ================= -->
+<div class="marquee" aria-hidden="true">
+  <div class="marquee-track">
+    <span>PROMO GRAPHICS ✦ TIKTOK EDITS ✦ LANDING PAGES ✦ MOTION DESIGN ✦ BRAND SYSTEMS ✦&nbsp;</span>
+    <span>PROMO GRAPHICS ✦ TIKTOK EDITS ✦ LANDING PAGES ✦ MOTION DESIGN ✦ BRAND SYSTEMS ✦&nbsp;</span>
+  </div>
+</div>
+
+<!-- ================= WORK (3D tilt cards) ================= -->
+<section id="work" class="lsection">
+  <div class="lwrap">
+    <h2 class="reveal"><span class="idx">01</span> What we make</h2>
+    <div class="tilt-grid">
+      <article class="tilt-card reveal" data-tilt>
+        <div class="tc-glow"></div>
+        <div class="tc-body">
+          <div class="tc-icon">🎨</div>
+          <h3>Promo Graphics</h3>
+          <p>Posters, banners and social ads with depth, glow and motion baked in.</p>
+          <div class="tc-price">from S$35</div>
+        </div>
+      </article>
+      <article class="tilt-card reveal" data-tilt style="--d:.12s">
+        <div class="tc-glow"></div>
+        <div class="tc-body">
+          <div class="tc-icon">🎬</div>
+          <h3>TikTok &amp; Video</h3>
+          <p>Vertical edits cut for retention — hook in 3 seconds, captions throughout.</p>
+          <div class="tc-price">from S$80</div>
+        </div>
+      </article>
+      <article class="tilt-card reveal" data-tilt style="--d:.24s">
+        <div class="tc-glow"></div>
+        <div class="tc-body">
+          <div class="tc-icon">🖥️</div>
+          <h3>Landing Pages</h3>
+          <p>One page, one goal. Immersive, mobile-first, spam-protected and tracked.</p>
+          <div class="tc-price">from S$280</div>
+        </div>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- ================= PROCESS (parallax layers) ================= -->
+<section id="stack" class="lsection">
+  <div class="lwrap">
+    <h2 class="reveal"><span class="idx">02</span> How it works</h2>
+    <div class="steps3d">
+      <div class="step3d reveal">
+        <div class="s-num">1</div>
+        <div><h3>Brief</h3><p>Tell us the goal and deadline. Fixed quote, zero surprises.</p></div>
+      </div>
+      <div class="step3d reveal" style="--d:.1s">
+        <div class="s-num">2</div>
+        <div><h3>Free draft</h3><p>A watermarked first draft lands in ~48 hours. Pay only if you like it.</p></div>
+      </div>
+      <div class="step3d reveal" style="--d:.2s">
+        <div class="s-num">3</div>
+        <div><h3>Track live</h3><p>Watch progress, files and messages in your client portal — realtime.</p></div>
+      </div>
+      <div class="step3d reveal" style="--d:.3s">
+        <div class="s-num">4</div>
+        <div><h3>Launch</h3><p>Final files delivered. We stay for tweaks with a gentle care plan.</p></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= STATS (counters) ================= -->
+<section id="stats" class="lsection">
+  <div class="lwrap">
+    <h2 class="reveal"><span class="idx">03</span> Signals</h2>
+    <div class="stat3d-grid">
+      <div class="stat3d reveal"><div class="n" data-count="48">0</div><div class="l">hour first draft</div></div>
+      <div class="stat3d reveal" style="--d:.1s"><div class="n" data-count="3">0</div><div class="l">second hooks</div></div>
+      <div class="stat3d reveal" style="--d:.2s"><div class="n" data-count="100" data-suffix="%">0</div><div class="l">fixed quotes</div></div>
+      <div class="stat3d reveal" style="--d:.3s"><div class="n" data-count="20" data-suffix="%" data-prefix="−">0</div><div class="l">first 10 clients, for life</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= CTA ================= -->
+<section class="lsection cta3d">
+  <div class="lwrap reveal">
+    <div class="cta-panel" data-tilt>
+      <div class="tc-glow"></div>
+      <h2>Ready to leave flatland?</h2>
+      <p>Free watermarked first draft. Pay only if you love it.</p>
+      <a class="lbtn" href="../index.html#contact">Start my free draft</a>
+    </div>
+  </div>
+</section>
+
+<footer class="lfooter">
+  <div class="lwrap">
+    <span>© 2026 <b>D.STUDIO</b> · LAB</span>
+    <a href="../index.html">Classic site</a>
+    <a href="../portal/">Client portal</a>
+  </div>
+</footer>
+
+<script src="lab.js"></script>
+</body>
+</html>
