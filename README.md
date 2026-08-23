@@ -13,6 +13,15 @@ npm run dev      # http://localhost:5173
 
 No database, no API key, no account.
 
+### Daily use
+
+Double-click **`启动面板-Windows.bat`** (Windows) or **`启动面板-Mac.command`**
+(macOS). Each installs dependencies on first run, starts the dev server, and
+opens the browser. Keep the window open while using the panel; closing it stops
+the server.
+
+The equivalent by hand is `npm run dev` from this directory.
+
 ---
 
 ## What it answers
