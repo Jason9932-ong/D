@@ -19,7 +19,18 @@ import type { MarketDataProvider } from './marketDataProvider'
  * switches slice that series locally instead of re-fetching.
  */
 
-const BASE = '/api/yahoo/v8/finance/chart'
+/**
+ * Yahoo serves the same data from two hosts. When one rate-limits a client the
+ * other sometimes still answers, so a 429 is retried against the alternate.
+ */
+const HOSTS = ['/api/yahoo/v8/finance/chart', '/api/yahoo2/v8/finance/chart']
+
+/** Spacing between symbol requests. Five simultaneous cookie-less requests look
+ *  like scraping and are a common trigger for HTTP 429; going one at a time
+ *  with a short gap keeps the whole refresh under ~2s and avoids the burst. */
+const REQUEST_GAP_MS = 220
+
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
 
 interface YahooMeta {
   symbol: string
@@ -113,21 +124,36 @@ function parseChart(symbol: SymbolKey, result: YahooResult): Quote {
     change,
     changePercent: (change / previousClose) * 100,
     historical: withChanges(series),
+    sourceName: 'Yahoo Finance',
   }
 }
 
 async function fetchOne(symbol: SymbolKey, signal?: AbortSignal): Promise<Quote> {
   const ticker = encodeURIComponent(SYMBOL_META[symbol].vendorSymbol)
-  const res = await fetch(`${BASE}/${ticker}?range=1y&interval=1d`, { signal })
-  if (!res.ok) {
-    throw new Error(`Upstream responded ${res.status}`)
+  let lastError = new Error('Request failed')
+
+  for (const host of HOSTS) {
+    const res = await fetch(`${host}/${ticker}?range=1y&interval=1d`, { signal })
+    if (!res.ok) {
+      lastError = new Error(
+        res.status === 429
+          ? 'Rate limited by Yahoo (HTTP 429)'
+          : `Upstream responded ${res.status}`,
+      )
+      // Only a rate limit is worth retrying elsewhere; a 404 will be a 404
+      // on the alternate host too.
+      if (res.status === 429) continue
+      throw lastError
+    }
+    const body = await res.json()
+    const err = body?.chart?.error
+    if (err) throw new Error(err.description ?? 'Upstream error')
+    const result: YahooResult | undefined = body?.chart?.result?.[0]
+    if (!result) throw new Error('Empty response')
+    return parseChart(symbol, result)
   }
-  const body = await res.json()
-  const err = body?.chart?.error
-  if (err) throw new Error(err.description ?? 'Upstream error')
-  const result: YahooResult | undefined = body?.chart?.result?.[0]
-  if (!result) throw new Error('Empty response')
-  return parseChart(symbol, result)
+
+  throw lastError
 }
 
 export const yahooProvider: MarketDataProvider = {
@@ -136,21 +162,23 @@ export const yahooProvider: MarketDataProvider = {
   isDemo: false,
 
   async fetchSnapshot(symbols, signal): Promise<MarketDataSnapshot> {
-    const settled = await Promise.allSettled(symbols.map((s) => fetchOne(s, signal)))
-
     const results = {} as Record<SymbolKey, QuoteResult>
-    symbols.forEach((symbol, i) => {
-      const outcome = settled[i]
-      results[symbol] =
-        outcome.status === 'fulfilled'
-          ? { status: 'ok', quote: outcome.value }
-          : {
-              status: 'error',
-              symbol,
-              message:
-                outcome.reason instanceof Error ? outcome.reason.message : 'Request failed',
-            }
-    })
+
+    // Sequential, not parallel — see REQUEST_GAP_MS.
+    for (let i = 0; i < symbols.length; i++) {
+      const symbol = symbols[i]
+      if (i > 0) await sleep(REQUEST_GAP_MS)
+      try {
+        results[symbol] = { status: 'ok', quote: await fetchOne(symbol, signal) }
+      } catch (err) {
+        if (signal?.aborted) throw err
+        results[symbol] = {
+          status: 'error',
+          symbol,
+          message: err instanceof Error ? err.message : 'Request failed',
+        }
+      }
+    }
 
     return {
       fetchedAt: Date.now(),

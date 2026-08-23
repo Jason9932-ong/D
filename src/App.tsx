@@ -23,7 +23,7 @@ const VXN_TOOLTIP =
   'VXN measures expected volatility, not market direction. A rising VXN does not mean the Nasdaq-100 will fall; it means larger moves are being priced in.'
 
 export default function App() {
-  const [providerId, setProviderId] = useLocalStorage<ProviderId>('vxpanel.provider', 'yahoo')
+  const [providerId, setProviderId] = useLocalStorage<ProviderId>('vxpanel.provider.v2', 'auto')
   const [range, setRange] = useLocalStorage<RangeKey>('vxpanel.range', '30D')
   const [autoRefresh, setAutoRefresh] = useLocalStorage<boolean>('vxpanel.autoRefresh', true)
   const [learningOpen, setLearningOpen] = useLocalStorage<boolean>('vxpanel.learning', false)

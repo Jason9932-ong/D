@@ -39,6 +39,12 @@ export interface Quote {
   changePercent: number
   /** Oldest → newest. Up to ~1 year of daily closes. */
   historical: HistoricalPoint[]
+  /**
+   * Which upstream actually supplied this instrument. Set when a snapshot can
+   * mix sources (e.g. intraday Yahoo for one symbol, official CBOE for another),
+   * so the UI can show provenance per instrument rather than per snapshot.
+   */
+  sourceName?: string
 }
 
 /** A per-symbol result, so one failed instrument cannot hide the others. */

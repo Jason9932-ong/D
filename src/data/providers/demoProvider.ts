@@ -92,6 +92,7 @@ function buildQuote(symbol: SymbolKey): Quote {
     change,
     changePercent: (change / previousClose) * 100,
     historical: withChanges(series),
+    sourceName: 'Demo (synthetic)',
   }
 }
 

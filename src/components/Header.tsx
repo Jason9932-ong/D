@@ -1,5 +1,5 @@
 import type { MarketStatus } from '../data/marketStatus'
-import type { ProviderId } from '../data/providers'
+import { PROVIDER_OPTIONS, type ProviderId } from '../data/providers'
 
 const STATUS_STYLE: Record<MarketStatus, string> = {
   OPEN: 'text-emerald-700 dark:text-emerald-400',
@@ -108,8 +108,11 @@ export function Header({
             onChange={(e) => onProviderChange(e.target.value as ProviderId)}
             className="rounded border border-neutral-300 bg-transparent px-1.5 py-0.5 text-2xs text-neutral-700 dark:border-neutral-700 dark:text-neutral-200"
           >
-            <option value="yahoo">Live — Yahoo Finance</option>
-            <option value="demo">Demo — synthetic data</option>
+            {PROVIDER_OPTIONS.map((option) => (
+              <option key={option.id} value={option.id}>
+                {option.label}
+              </option>
+            ))}
           </select>
         </label>
 
