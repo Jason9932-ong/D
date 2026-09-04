@@ -1,0 +1,384 @@
+{
+  "name": "Meta Ads → 周 Leads 报表 → WhatsApp",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 9 * * 1"
+            }
+          ]
+        }
+      },
+      "id": "weekly-trigger",
+      "name": "Weekly Trigger (Mon 09:00 SGT)",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -720,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "c0",
+              "name": "adAccountId",
+              "value": "act_REPLACE_WITH_YOUR_AD_ACCOUNT_ID",
+              "type": "string"
+            },
+            {
+              "id": "c1",
+              "name": "graphVersion",
+              "value": "v23.0",
+              "type": "string"
+            },
+            {
+              "id": "c2",
+              "name": "currency",
+              "value": "SGD",
+              "type": "string"
+            },
+            {
+              "id": "c3",
+              "name": "sheetId",
+              "value": "REPLACE_WITH_GOOGLE_SHEET_ID",
+              "type": "string"
+            },
+            {
+              "id": "c4",
+              "name": "sheetTab",
+              "value": "Weekly",
+              "type": "string"
+            },
+            {
+              "id": "c5",
+              "name": "evolutionBaseUrl",
+              "value": "https://REPLACE-WITH-YOUR-EVOLUTION-HOST",
+              "type": "string"
+            },
+            {
+              "id": "c6",
+              "name": "evolutionInstance",
+              "value": "REPLACE_WITH_INSTANCE_NAME",
+              "type": "string"
+            },
+            {
+              "id": "c7",
+              "name": "waRecipient",
+              "value": "REPLACE@g.us",
+              "type": "string"
+            },
+            {
+              "id": "c8",
+              "name": "reportLink",
+              "value": "",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "config",
+      "name": "Config",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -500,
+        300
+      ],
+      "notes": "所有需要你填的值都集中在这里。密钥不放这里，走 Credentials。",
+      "notesInFlow": true
+    },
+    {
+      "parameters": {
+        "jsCode": "// 计算「上一个完整周」(Mon-Sun, Asia/Singapore) 以及它的前一周，用于周环比。\n// 周一 09:00 触发时，上一个完整周 = 上周一 ~ 上周日。\nconst fmt = new Intl.DateTimeFormat('en-CA', {\n  timeZone: 'Asia/Singapore', year: 'numeric', month: '2-digit', day: '2-digit',\n});\nconst todaySGT = fmt.format(new Date());            // YYYY-MM-DD\nconst anchor = new Date(todaySGT + 'T00:00:00Z');   // 用 UTC 做纯日期运算，避开时区漂移\n\nconst dow = anchor.getUTCDay();                     // 0=Sun … 6=Sat\nconst daysSinceMonday = (dow + 6) % 7;\n\nconst thisMonday = new Date(anchor);\nthisMonday.setUTCDate(anchor.getUTCDate() - daysSinceMonday);\n\nconst shift = (base, days) => {\n  const d = new Date(base);\n  d.setUTCDate(base.getUTCDate() + days);\n  return d;\n};\nconst iso = (d) => d.toISOString().slice(0, 10);\n\nconst since     = shift(thisMonday, -7);\nconst until     = shift(thisMonday, -1);\nconst prevSince = shift(thisMonday, -14);\nconst prevUntil = shift(thisMonday, -8);\n\nreturn [{\n  json: {\n    since:     iso(since),\n    until:     iso(until),\n    prevSince: iso(prevSince),\n    prevUntil: iso(prevUntil),\n    label:     iso(since) + ' → ' + iso(until),\n    generatedAt: new Date().toISOString(),\n  },\n}];"
+      },
+      "id": "date-ranges",
+      "name": "Date Ranges",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -280,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "url": "=https://graph.facebook.com/{{ $('Config').first().json.graphVersion }}/{{ $('Config').first().json.adAccountId }}/insights",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "facebookGraphApi",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "level",
+              "value": "campaign"
+            },
+            {
+              "name": "fields",
+              "value": "campaign_id,campaign_name,spend,impressions,clicks,actions"
+            },
+            {
+              "name": "time_range",
+              "value": "={{ JSON.stringify({ since: $('Date Ranges').first().json.since, until: $('Date Ranges').first().json.until }) }}"
+            },
+            {
+              "name": "use_unified_attribution_setting",
+              "value": "true"
+            },
+            {
+              "name": "limit",
+              "value": "200"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "neverError": false
+            }
+          }
+        }
+      },
+      "id": "insights---last-week",
+      "name": "Insights - Last Week",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -60,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "url": "=https://graph.facebook.com/{{ $('Config').first().json.graphVersion }}/{{ $('Config').first().json.adAccountId }}/insights",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "facebookGraphApi",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "level",
+              "value": "campaign"
+            },
+            {
+              "name": "fields",
+              "value": "campaign_id,campaign_name,spend,impressions,clicks,actions"
+            },
+            {
+              "name": "time_range",
+              "value": "={{ JSON.stringify({ since: $('Date Ranges').first().json.prevSince, until: $('Date Ranges').first().json.prevUntil }) }}"
+            },
+            {
+              "name": "use_unified_attribution_setting",
+              "value": "true"
+            },
+            {
+              "name": "limit",
+              "value": "200"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "neverError": false
+            }
+          }
+        }
+      },
+      "id": "insights---previous-week",
+      "name": "Insights - Previous Week",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        160,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// 把两周的 Insights 响应压平成「每个 campaign 一行」，并算出周环比。\n//\n// 口径说明（重要，别混着算）:\n//   onsite_conversion.lead_grouped   = 站内即时表单 (Lead Ads) 的 leads\n//   offsite_conversion.fb_pixel_lead = 网站表单，靠 Pixel / CAPI 上报的 Lead 事件\n//   lead                             = Meta 的聚合口径，可能已包含上面两者 —— 不要相加，\n//                                      只单独留着做对账，否则会双重计数。\n//   onsite_conversion.messaging_conversation_started_7d = Click-to-WhatsApp 的对话数，\n//                                      不是 lead，单独看。\n\nconst CFG = $('Config').first().json;\nconst R   = $('Date Ranges').first().json;\n\nconst A_FORM  = 'onsite_conversion.lead_grouped';\nconst A_PIXEL = 'offsite_conversion.fb_pixel_lead';\nconst A_AGG   = 'lead';\nconst A_CTWA  = 'onsite_conversion.messaging_conversation_started_7d';\n\nconst act = (actions, type) => {\n  if (!Array.isArray(actions)) return 0;\n  const hit = actions.find((a) => a.action_type === type);\n  return hit ? Number(hit.value) || 0 : 0;\n};\n\nconst shape = (resp) => {\n  const rows = (resp && Array.isArray(resp.data)) ? resp.data : [];\n  const out = {};\n  for (const r of rows) {\n    const formLeads  = act(r.actions, A_FORM);\n    const pixelLeads = act(r.actions, A_PIXEL);\n    out[r.campaign_id] = {\n      campaignId:   r.campaign_id,\n      campaignName: r.campaign_name,\n      spend:        Number(r.spend) || 0,\n      impressions:  Number(r.impressions) || 0,\n      clicks:       Number(r.clicks) || 0,\n      formLeads,\n      pixelLeads,\n      leads:        formLeads + pixelLeads,\n      leadsAggCheck: act(r.actions, A_AGG),   // 对账用，不参与求和\n      ctwaChats:    act(r.actions, A_CTWA),\n    };\n  }\n  return out;\n};\n\nconst cur  = shape($('Insights - Last Week').first().json);\nconst prev = shape($('Insights - Previous Week').first().json);\n\nconst round2 = (n) => Math.round(n * 100) / 100;\nconst cpl = (spend, leads) => (leads > 0 ? round2(spend / leads) : null);\n\nconst items = Object.values(cur)\n  // 完全没花钱也没曝光的，多半是当周没投放，剔掉免得噪音\n  .filter((c) => c.spend > 0 || c.impressions > 0)\n  .map((c) => {\n    const p = prev[c.campaignId] || { leads: 0, spend: 0 };\n    const curCpl  = cpl(c.spend, c.leads);\n    const prevCpl = cpl(p.spend, p.leads);\n    return {\n      weekStart:      R.since,\n      weekEnd:        R.until,\n      campaignId:     c.campaignId,\n      campaignName:   c.campaignName,\n      spend:          round2(c.spend),\n      currency:       CFG.currency,\n      impressions:    c.impressions,\n      clicks:         c.clicks,\n      ctr:            c.impressions > 0 ? round2((c.clicks / c.impressions) * 100) : 0,\n      leads:          c.leads,\n      formLeads:      c.formLeads,\n      pixelLeads:     c.pixelLeads,\n      ctwaChats:      c.ctwaChats,\n      cpl:            curCpl,\n      prevLeads:      p.leads,\n      leadsDelta:     c.leads - p.leads,\n      prevCpl:        prevCpl,\n      cplDeltaPct:    (prevCpl && curCpl) ? round2(((curCpl - prevCpl) / prevCpl) * 100) : null,\n      leadsAggCheck:  c.leadsAggCheck,\n      generatedAt:    R.generatedAt,\n    };\n  })\n  .sort((a, b) => b.leads - a.leads || b.spend - a.spend);\n\nif (items.length === 0) {\n  return [{ json: {\n    weekStart: R.since, weekEnd: R.until,\n    campaignId: '', campaignName: '(本周无投放)',\n    spend: 0, currency: CFG.currency, impressions: 0, clicks: 0, ctr: 0,\n    leads: 0, formLeads: 0, pixelLeads: 0, ctwaChats: 0, cpl: null,\n    prevLeads: 0, leadsDelta: 0, prevCpl: null, cplDeltaPct: null,\n    leadsAggCheck: 0, generatedAt: R.generatedAt,\n  }}];\n}\n\nreturn items.map((json) => ({ json }));"
+      },
+      "id": "aggregate-by-campaign",
+      "name": "Aggregate by Campaign",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        380,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "={{ $('Config').first().json.sheetId }}",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "={{ $('Config').first().json.sheetTab }}",
+          "mode": "name"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "matchingColumns": [],
+          "schema": []
+        },
+        "options": {}
+      },
+      "id": "archive-sheet",
+      "name": "Archive to Google Sheet",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        600,
+        300
+      ],
+      "notes": "Sheet 第一行的表头必须和字段名完全一致，见 README。",
+      "notesInFlow": true
+    },
+    {
+      "parameters": {
+        "jsCode": "// 把所有 campaign 行折叠成一条 WhatsApp 消息。\n// WhatsApp 支持 *粗体* _斜体_ ~删除线~ ```等宽```，不支持表格 —— 所以用缩进列表。\n\nconst CFG  = $('Config').first().json;\nconst R    = $('Date Ranges').first().json;\nconst rows = $input.all().map((i) => i.json).filter((r) => r.campaignId);\n\nconst cur  = CFG.currency;\nconst n2   = (x) => (x === null || x === undefined ? '—' : Number(x).toFixed(2));\nconst pct  = (x) => (x === null || x === undefined ? '' : (x > 0 ? '+' : '') + x.toFixed(0) + '%');\nconst delta = (d) => (d === 0 ? '➖ 持平' : `${d > 0 ? '🔺 +' : '🔻 '}${d}`);\n\nif (rows.length === 0) {\n  return [{ json: { message: `*📊 Meta Ads 周报*\\n${R.label}\\n\\n本周无投放数据。` } }];\n}\n\nconst T = rows.reduce((a, r) => ({\n  leads:     a.leads + r.leads,\n  prevLeads: a.prevLeads + r.prevLeads,\n  spend:     a.spend + r.spend,\n  ctwa:      a.ctwa + r.ctwaChats,\n}), { leads: 0, prevLeads: 0, spend: 0, ctwa: 0 });\n\nconst totalCpl     = T.leads > 0 ? T.spend / T.leads : null;\nconst leadsDelta   = T.leads - T.prevLeads;\nconst leadsPctText = T.prevLeads > 0 ? ` (${pct((leadsDelta / T.prevLeads) * 100)})` : '';\n\nconst TOP = 8;\nconst shown = rows.slice(0, TOP);\nconst rest  = rows.slice(TOP);\n\nconst lines = [\n  `*📊 Meta Ads 周报*`,\n  `_${R.label}_`,\n  ``,\n  `*${T.leads}* leads  ${delta(leadsDelta)}${leadsPctText}`,\n  `花费 ${cur} ${n2(T.spend)}  ·  CPL ${cur} ${n2(totalCpl)}`,\n];\n\nif (T.ctwa > 0) lines.push(`WhatsApp 对话 ${T.ctwa} 次`);\n\nlines.push(``, `*Campaign 明细*`);\n\nshown.forEach((r, i) => {\n  const d = r.leadsDelta;\n  const cplTag = r.cplDeltaPct === null ? '' : `  (CPL ${pct(r.cplDeltaPct)})`;\n  lines.push(\n    `${i + 1}. ${r.campaignName}`,\n    `    ${r.leads} leads ${delta(d)}  ·  ${cur} ${n2(r.spend)}  ·  CPL ${cur} ${n2(r.cpl)}${cplTag}`,\n  );\n});\n\nif (rest.length > 0) {\n  const restLeads = rest.reduce((a, r) => a + r.leads, 0);\n  const restSpend = rest.reduce((a, r) => a + r.spend, 0);\n  lines.push(`   _其余 ${rest.length} 个 campaign：${restLeads} leads · ${cur} ${n2(restSpend)}_`);\n}\n\n// 一条 WhatsApp 文本上限约 65k 字符，但手机端超过 ~1500 就要点「阅读更多」，截断更实用\nlet message = lines.join('\\n');\nif (message.length > 3500) message = message.slice(0, 3450) + '\\n…（已截断，完整数据见 Google Sheet）';\n\nif (CFG.reportLink) message += `\\n\\n完整报表 → ${CFG.reportLink}`;\n\nreturn [{ json: { message, campaignCount: rows.length, totalLeads: T.leads } }];"
+      },
+      "id": "build-whatsapp-message",
+      "name": "Build WhatsApp Message",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        820,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Config').first().json.evolutionBaseUrl }}/message/sendText/{{ $('Config').first().json.evolutionInstance }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ number: $('Config').first().json.waRecipient, text: $json.message }) }}",
+        "options": {}
+      },
+      "id": "send-whatsapp",
+      "name": "Send to WhatsApp (Evolution API)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1040,
+        300
+      ],
+      "notes": "Evolution API v1 的 body 结构不同，见 README「常见坑」。",
+      "notesInFlow": true
+    }
+  ],
+  "connections": {
+    "Weekly Trigger (Mon 09:00 SGT)": {
+      "main": [
+        [
+          {
+            "node": "Config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Config": {
+      "main": [
+        [
+          {
+            "node": "Date Ranges",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Date Ranges": {
+      "main": [
+        [
+          {
+            "node": "Insights - Last Week",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Insights - Last Week": {
+      "main": [
+        [
+          {
+            "node": "Insights - Previous Week",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Insights - Previous Week": {
+      "main": [
+        [
+          {
+            "node": "Aggregate by Campaign",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate by Campaign": {
+      "main": [
+        [
+          {
+            "node": "Archive to Google Sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Archive to Google Sheet": {
+      "main": [
+        [
+          {
+            "node": "Build WhatsApp Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build WhatsApp Message": {
+      "main": [
+        [
+          {
+            "node": "Send to WhatsApp (Evolution API)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "Asia/Singapore",
+    "saveManualExecutions": true
+  },
+  "pinData": {},
+  "meta": {
+    "instanceId": ""
+  },
+  "tags": []
+}
